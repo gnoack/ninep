@@ -24,9 +24,9 @@ type p9conn struct {
 }
 
 func (c *p9conn) Run(ctx context.Context) {
-	r9 := reader9p{c.r}
+	r9 := reader9p{Reader: c.r}
 	for {
-		size, type9p, tag = r9.Header()
+		size, type9p, tag := r9.Header()
 
 		c.getReqReader(tag)(size, type9p, r9)
 	}
@@ -67,7 +67,7 @@ func (c *p9conn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) 
 	defer func() { c.tags <- tag }()
 
 	c.setReqReader(tag, func(size uint32, type9p uint16, r9 reader9p) {
-		n := int(r9.Uint16())
+		n = int(r9.Uint16())
 		if _, err := io.ReadFull(r9, buf); err != nil {
 			// xxx handle error
 			// note reader will be in odd state
