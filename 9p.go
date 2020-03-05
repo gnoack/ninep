@@ -60,27 +60,53 @@ func (c *p9conn) clearReqReader(tag uint16) {
 	delete(c.reqReaders, tag)
 }
 
-func (c *p9conn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
-	done := make(chan struct{})
+type msgHeader struct {
+	size   uint32
+	type9p uint16
+	r9     reader9p
+}
 
-	tag := <-c.tags
-	defer func() { c.tags <- tag }()
+type tagHandle struct {
+	tag uint16
+	// Reader Run loop sends a msg header for that tag if found.
+	ch chan msgHeader
+	// The handling function replies back to the reader run loop
+	// through this channel.
+	done chan struct{}
+}
 
-	c.setReqReader(tag, func(size uint32, type9p uint16, r9 reader9p) {
-		n = int(r9.Uint16())
-		if _, err := io.ReadFull(r9, buf); err != nil {
-			// xxx handle error
-			// note reader will be in odd state
-			// xxx handle io.ErrUnexpectedEOF.
-		}
+func (h *tagHandle) await() (size uint32, type9p uint16, r9 reader9p) {
+	s := <-h.ch
+	return s.size, s.type9p, s.r9
+}
 
-		done <- struct{}{}
+func (c *p9conn) acquireTag() *tagHandle {
+	h := &tagHandle{
+		tag:  <-c.tags,
+		ch:   make(chan msgHeader),
+		done: make(chan struct{}),
+	}
+	c.setReqReader(h.tag, func(size uint32, type9p uint16, r9 reader9p) {
+		// Invoked by reader run loop to read the given message.
+		h.ch <- msgHeader{size: size, type9p: type9p, r9: r9}
+		<-h.done
 	})
-	defer func() { c.clearReqReader(tag) }()
+	return h
+}
+
+func (c *p9conn) releaseTag(h *tagHandle) {
+	close(h.done)
+	c.clearReqReader(h.tag)
+	c.tags <- h.tag
+}
+
+func (c *p9conn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
 	w := writer9p{Writer: c.w}
-	w.Header(4+2+2+4+8+4, tRead, tag)
+	w.Header(4+2+2+4+8+4, tRead, tag.tag)
 	w.Uint32(fid)
 	w.Uint64(offset)
 	w.Uint32(uint32(len(buf)))
@@ -91,6 +117,17 @@ func (c *p9conn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) 
 		// set p9conn error and return.
 	}
 
-	<-done
+	size, type9p, r9 := tag.await()
+
+	_, _ = size, type9p // XXX
+
+	n = int(r9.Uint16())
+	buf = buf[:n]
+	if _, err := io.ReadFull(r9, buf); err != nil {
+		// xxx handle error
+		// note reader will be in odd state
+		// xxx handle io.ErrUnexpectedEOF.
+	}
+
 	return
 }
