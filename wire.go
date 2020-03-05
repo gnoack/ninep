@@ -63,3 +63,11 @@ func (r *reader9p) Uint16() (v uint16) {
 	r.applyErr(binary.Read(*r, binary.LittleEndian, &v))
 	return
 }
+
+func (r *reader9p) String() (s string) {
+	var n uint16
+	r.applyErr(binary.Read(r, binary.LittleEndian, &n))
+	buf := make([]byte, n)
+	r.applyErr(binary.Read(r, binary.LittleEndian, &buf))
+	return string(buf)
+}

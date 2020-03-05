@@ -2,6 +2,7 @@ package ninep
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync"
 )
@@ -10,8 +11,8 @@ const tRead = 123
 
 type callback func(uint32, uint16, reader9p)
 
-// p9conn represents a connection to a 9p server.
-type p9conn struct {
+// clientConn represents a connection to a 9p server.
+type clientConn struct {
 	tags chan uint16
 
 	wmux sync.Mutex
@@ -19,11 +20,17 @@ type p9conn struct {
 
 	r io.Reader
 
+	// Callbacks that get called when a message for the given tag
+	// is read.
 	rrmux      sync.Mutex
 	reqReaders map[uint16]callback
+
+	err error
 }
 
-func (c *p9conn) Run(ctx context.Context) {
+// Runs the background reader goroutine which dispatches requests.
+func (c *clientConn) Run(ctx context.Context) {
+	// TODO: Context cancelation.
 	r9 := reader9p{Reader: c.r}
 	for {
 		size, type9p, tag := r9.Header()
@@ -32,7 +39,7 @@ func (c *p9conn) Run(ctx context.Context) {
 	}
 }
 
-func (c *p9conn) getReqReader(tag uint16) callback {
+func (c *clientConn) getReqReader(tag uint16) callback {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
@@ -46,14 +53,14 @@ func (c *p9conn) getReqReader(tag uint16) callback {
 	return rr
 }
 
-func (c *p9conn) setReqReader(tag uint16, rr callback) {
+func (c *clientConn) setReqReader(tag uint16, rr callback) {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
 	c.reqReaders[tag] = rr
 }
 
-func (c *p9conn) clearReqReader(tag uint16) {
+func (c *clientConn) clearReqReader(tag uint16) {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
@@ -80,7 +87,7 @@ func (h *tagHandle) await() (size uint32, type9p uint16, r9 reader9p) {
 	return s.size, s.type9p, s.r9
 }
 
-func (c *p9conn) acquireTag() *tagHandle {
+func (c *clientConn) acquireTag() *tagHandle {
 	h := &tagHandle{
 		tag:  <-c.tags,
 		ch:   make(chan msgHeader),
@@ -94,40 +101,50 @@ func (c *p9conn) acquireTag() *tagHandle {
 	return h
 }
 
-func (c *p9conn) releaseTag(h *tagHandle) {
+func (c *clientConn) releaseTag(h *tagHandle) {
 	close(h.done)
 	c.clearReqReader(h.tag)
 	c.tags <- h.tag
 }
 
-func (c *p9conn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
+func (c *clientConn) readError(r9 reader9p) error {
+	s := r9.String()
+	// todo: check for r9 error
+	return errors.New(s)
+}
+
+func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
 	w := writer9p{Writer: c.w}
-	w.Header(4+2+2+4+8+4, tRead, tag.tag)
+	w.Header(4+2+2+4+8+4, Tread, tag.tag)
 	w.Uint32(fid)
 	w.Uint64(offset)
 	w.Uint32(uint32(len(buf)))
 	c.wmux.Unlock()
 
 	if w.err != nil {
-		// TODO: Error after writing. Handle wedged connection,
-		// set p9conn error and return.
+		clientConn.err = w.err
+		return 0, clientConn.err
 	}
 
 	size, type9p, r9 := tag.await()
 
+	if type9p == Rerror {
+		return 0, c.readError(r9)
+	}
 	_, _ = size, type9p // XXX
 
 	n = int(r9.Uint16())
 	buf = buf[:n]
 	if _, err := io.ReadFull(r9, buf); err != nil {
-		// xxx handle error
-		// note reader will be in odd state
-		// xxx handle io.ErrUnexpectedEOF.
+		clientConn.err = err
+		return 0, clientConn.err
 	}
 
-	return
+	// todo: check for r9 error
+
+	return n, buf
 }
