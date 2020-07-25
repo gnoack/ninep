@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -79,52 +80,52 @@ func printComment(ss []string) {
 	fmt.Println()
 }
 
-// returns type, variable name
-func getInfo(s string) (string, string) {
+// returns type, variable name, size calculation code
+func getInfo(s string) (string, string, string) {
 	parts := strings.SplitN(s, "[", 2)
 	name := parts[0]
 	switch {
 	case strings.HasSuffix(s, "[1]"):
-		return "uint8", name
+		return "uint8", name, "1"
 	case strings.HasSuffix(s, "[2]"):
-		return "uint16", name
+		return "uint16", name, "2"
 	case strings.HasSuffix(s, "[4]"):
-		return "uint32", name
+		return "uint32", name, "4"
 	case strings.HasSuffix(s, "[8]"):
-		return "uint64", name
+		return "uint64", name, "8"
 	case strings.HasSuffix(s, "[13]"):
-		return "Qid", name
+		return "Qid", name, "13"
 	case strings.HasSuffix(s, "[s]"):
-		return "string", name
+		return "string", name, fmt.Sprintf("(2 + len(%v))", name)
 	case strings.HasPrefix(s, "T") || strings.HasPrefix(s, "R"):
-		return "uint16", "msgType"
+		return "uint16", "msgType", "2"
 	case s == "stat[n]":
-		return "Stat", name
+		return "Stat", name, fmt.Sprintf("(39 + 8 + len(%v.Name) + len(%v.Uid) + len(%v.Gid) + len(%v.Muid))", name, name, name, name)
 	case strings.HasSuffix(s, "[count[4]]"):
-		return "[]byte", name
+		return "[]byte", name, fmt.Sprintf("(4 + len(%v))", name)
 	case s == "nwname*(wname[s])":
-		return "[]string", "nwnames"
+		return "[]string", "nwnames", "stringSliceSize(nwnames)"
 	case s == "nwqid*(qid[13])":
-		return "[]Qid", "qids"
+		return "[]Qid", "qids", "(2 + 13*len(qids))"
 	default:
 		log.Fatalf("unknown type: %q", s)
 	}
-	return "", ""
-}
-
-func getType(s string) string {
-	t, _ := getInfo(s)
-	return t
+	return "", "", ""
 }
 
 func printWriteFunc(ss []string) {
 	name := ss[1]
 	var msgType string
-	fmt.Print("func Write" + name + "(w io.Writer, ")
+	fmt.Print("func write" + name + "(w io.Writer, ")
 	for i, s := range ss {
-		t, n := getInfo(s)
+		t, n, _ := getInfo(s)
+		// msgType is fixed for each method
 		if n == "msgType" {
 			msgType = s
+			continue
+		}
+		// size is calculated dynamically based on other parameters
+		if n == "size" {
 			continue
 		}
 		fmt.Print(n + " " + t)
@@ -133,14 +134,28 @@ func printWriteFunc(ss []string) {
 		}
 	}
 	fmt.Println(") error {")
+	// Size calculation
+	fmt.Print("  var size uint32 = ")
+	for i, s := range ss {
+		_, _, sz := getInfo(s)
+		fmt.Print(sz)
+		if i < len(ss)-1 {
+			fmt.Print(" + ")
+		}
+	}
+	fmt.Println()
+
 	for _, s := range ss {
-		t, n := getInfo(s)
-		funcname := fmt.Sprintf("Write%v", strings.Title(t))
+		t, n, _ := getInfo(s)
+		funcname := fmt.Sprintf("write%v", strings.Title(t))
 		if t == "[]string" {
-			funcname = "WriteStringSlice"
+			funcname = "writeStringSlice"
 		}
 		if t == "[]Qid" {
-			funcname = "WriteStringSlice"
+			funcname = "writeQidSlice"
+		}
+		if t == "[]byte" {
+			funcname = "writeByteSlice"
 		}
 		if n == "msgType" {
 			n = msgType // resolve to constant directly
@@ -187,9 +202,21 @@ func conflate(in []string) []string {
 	return o
 }
 
+var outfile = flag.String("o", "/dev/stdout", "output file")
+
 func main() {
+	flag.Parse()
+	f, err := os.Create(*outfile)
+	must(err)
+	defer f.Close()
+	os.Stdout = f
+
 	out := make(chan []string)
 	go collect(out)
+
+	fmt.Println(`package ninep
+
+import "io"`)
 
 	for ss := range out {
 		ss = conflate(ss)

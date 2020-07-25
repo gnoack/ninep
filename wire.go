@@ -1,5 +1,7 @@
 package ninep
 
+//go:generate go run cmd/generate/main.go -o generated.go
+
 import (
 	"encoding/binary"
 	"io"
