@@ -113,21 +113,17 @@ func (c *clientConn) readError(r9 reader9p) error {
 	return errors.New(s)
 }
 
-func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
+func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	w := writer9p{Writer: c.w}
-	w.Header(4+2+2+4+8+4, Tread, tag.tag)
-	w.Uint32(fid)
-	w.Uint64(offset)
-	w.Uint32(uint32(len(buf)))
+	err := writeTread(c.w, tag.tag, fid, offset, uint32(len(buf)))
 	c.wmux.Unlock()
 
-	if w.err != nil {
-		clientConn.err = w.err
-		return 0, clientConn.err
+	if err != nil {
+		c.err = err
+		return 0, err
 	}
 
 	size, type9p, r9 := tag.await()
@@ -137,14 +133,14 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err err
 	}
 	_, _ = size, type9p // XXX
 
-	n = int(r9.Uint16())
+	n := int(r9.Uint16())
 	buf = buf[:n]
 	if _, err := io.ReadFull(r9, buf); err != nil {
-		clientConn.err = err
-		return 0, clientConn.err
+		c.err = err
+		return 0, c.err
 	}
 
 	// todo: check for r9 error
 
-	return n, buf
+	return n, c.err
 }

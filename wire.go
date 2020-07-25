@@ -7,36 +7,6 @@ import (
 	"io"
 )
 
-// writer9p is a wrapper around io.Writer with 9p specific helpers.
-type writer9p struct {
-	io.Writer
-	err error
-}
-
-func (w *writer9p) applyErr(err error) {
-	if err != nil && w.err == nil {
-		w.err = err
-	}
-}
-
-func (w *writer9p) Header(size uint32, type9p uint16, tag uint16) {
-	w.Uint32(size)
-	w.Uint16(type9p)
-	w.Uint16(tag)
-}
-
-func (w *writer9p) Uint64(v uint64) {
-	w.applyErr(binary.Write(*w, binary.LittleEndian, v))
-}
-
-func (w *writer9p) Uint32(v uint32) {
-	w.applyErr(binary.Write(*w, binary.LittleEndian, v))
-}
-
-func (w *writer9p) Uint16(v uint16) {
-	w.applyErr(binary.Write(*w, binary.LittleEndian, v))
-}
-
 // reader9p is a wrapper around io.Reader with 9p specific helpers.
 type reader9p struct {
 	io.Reader

@@ -135,7 +135,7 @@ func printWriteFunc(ss []string) {
 	}
 	fmt.Println(") error {")
 	// Size calculation
-	fmt.Print("  var size uint32 = ")
+	fmt.Print("  size := uint32(")
 	for i, s := range ss {
 		_, _, sz := getInfo(s)
 		fmt.Print(sz)
@@ -143,7 +143,7 @@ func printWriteFunc(ss []string) {
 			fmt.Print(" + ")
 		}
 	}
-	fmt.Println()
+	fmt.Println(")")
 
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
