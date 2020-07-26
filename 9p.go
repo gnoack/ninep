@@ -13,6 +13,7 @@ const tRead = 123
 
 type callback func()
 
+// TODO(gnoack): Need a way to close these.
 // clientConn represents a connection to a 9p server.
 type clientConn struct {
 	tags chan uint16
@@ -191,4 +192,21 @@ func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid Qid, err
 	tag.await()
 
 	return readRattach(c.r)
+}
+
+func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []Qid, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTwalk(c.w, tag.tag, fid, newfid, wname)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRwalk(c.r)
 }
