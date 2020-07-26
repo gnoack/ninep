@@ -175,3 +175,20 @@ func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid Qid, err
 
 	return readRauth(c.r)
 }
+
+func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid Qid, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTattach(c.w, tag.tag, fid, afid, uname, aname)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRattach(c.r)
+}
