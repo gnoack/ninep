@@ -74,7 +74,7 @@ func writeRauth(w io.Writer, tag uint16, aqid Qid) error {
 }
 
 // size[4] Rauth tag[2] aqid[13]
-func readRauth(r io.Reader) (tag uint16, aqid Qid, err error) {
+func readRauth(r io.Reader) (aqid Qid, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -92,6 +92,7 @@ func readRauth(r io.Reader) (tag uint16, aqid Qid, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -179,7 +180,7 @@ func writeRattach(w io.Writer, tag uint16, qid Qid) error {
 }
 
 // size[4] Rattach tag[2] qid[13]
-func readRattach(r io.Reader) (tag uint16, qid Qid, err error) {
+func readRattach(r io.Reader) (qid Qid, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -197,6 +198,7 @@ func readRattach(r io.Reader) (tag uint16, qid Qid, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -263,7 +265,7 @@ func writeRclunk(w io.Writer, tag uint16) error {
 }
 
 // size[4] Rclunk tag[2]
-func readRclunk(r io.Reader) (tag uint16, err error) {
+func readRclunk(r io.Reader) (err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -281,6 +283,7 @@ func readRclunk(r io.Reader) (tag uint16, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -306,7 +309,7 @@ func writeRerror(w io.Writer, tag uint16, ename string) error {
 }
 
 // size[4] Rerror tag[2] ename[s]
-func readRerror(r io.Reader) (tag uint16, ename string, err error) {
+func readRerror(r io.Reader) (ename string, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -324,6 +327,7 @@ func readRerror(r io.Reader) (tag uint16, ename string, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -390,7 +394,7 @@ func writeRflush(w io.Writer, tag uint16) error {
 }
 
 // size[4] Rflush tag[2]
-func readRflush(r io.Reader) (tag uint16, err error) {
+func readRflush(r io.Reader) (err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -408,6 +412,7 @@ func readRflush(r io.Reader) (tag uint16, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -483,7 +488,7 @@ func writeRopen(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
 }
 
 // size[4] Ropen tag[2] qid[13] iounit[4]
-func readRopen(r io.Reader) (tag uint16, qid Qid, iounit uint32, err error) {
+func readRopen(r io.Reader) (qid Qid, iounit uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -501,6 +506,7 @@ func readRopen(r io.Reader) (tag uint16, qid Qid, iounit uint32, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -594,7 +600,7 @@ func writeRcreate(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
 }
 
 // size[4] Rcreate tag[2] qid[13] iounit[4]
-func readRcreate(r io.Reader) (tag uint16, qid Qid, iounit uint32, err error) {
+func readRcreate(r io.Reader) (qid Qid, iounit uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -612,6 +618,7 @@ func readRcreate(r io.Reader) (tag uint16, qid Qid, iounit uint32, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -696,7 +703,7 @@ func writeRopenfd(w io.Writer, tag uint16, qid Qid, iounit uint32, unixfd uint32
 }
 
 // size[4] Ropenfd tag[2] qid[13] iounit[4] unixfd[4]
-func readRopenfd(r io.Reader) (tag uint16, qid Qid, iounit uint32, unixfd uint32, err error) {
+func readRopenfd(r io.Reader) (qid Qid, iounit uint32, unixfd uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -714,6 +721,7 @@ func readRopenfd(r io.Reader) (tag uint16, qid Qid, iounit uint32, unixfd uint32
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -801,7 +809,7 @@ func writeRread(w io.Writer, tag uint16, data []byte) error {
 }
 
 // size[4] Rread tag[2] data[count[4]]
-func readRread(r io.Reader) (tag uint16, data []byte, err error) {
+func readRread(r io.Reader) (data []byte, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -819,6 +827,7 @@ func readRread(r io.Reader) (tag uint16, data []byte, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -900,7 +909,7 @@ func writeRwrite(w io.Writer, tag uint16, count uint32) error {
 }
 
 // size[4] Rwrite tag[2] count[4]
-func readRwrite(r io.Reader) (tag uint16, count uint32, err error) {
+func readRwrite(r io.Reader) (count uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -918,6 +927,7 @@ func readRwrite(r io.Reader) (tag uint16, count uint32, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -984,7 +994,7 @@ func writeRremove(w io.Writer, tag uint16) error {
 }
 
 // size[4] Rremove tag[2]
-func readRremove(r io.Reader) (tag uint16, err error) {
+func readRremove(r io.Reader) (err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1002,6 +1012,7 @@ func readRremove(r io.Reader) (tag uint16, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -1068,7 +1079,7 @@ func writeRstat(w io.Writer, tag uint16, stat Stat) error {
 }
 
 // size[4] Rstat tag[2] stat[n]
-func readRstat(r io.Reader) (tag uint16, stat Stat, err error) {
+func readRstat(r io.Reader) (stat Stat, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1086,6 +1097,7 @@ func readRstat(r io.Reader) (tag uint16, stat Stat, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -1158,7 +1170,7 @@ func writeRwstat(w io.Writer, tag uint16) error {
 }
 
 // size[4] Rwstat tag[2]
-func readRwstat(r io.Reader) (tag uint16, err error) {
+func readRwstat(r io.Reader) (err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1176,6 +1188,7 @@ func readRwstat(r io.Reader) (tag uint16, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -1251,7 +1264,7 @@ func writeRversion(w io.Writer, tag uint16, msize uint32, version string) error 
 }
 
 // size[4] Rversion tag[2] msize[4] version[s]
-func readRversion(r io.Reader) (tag uint16, msize uint32, version string, err error) {
+func readRversion(r io.Reader) (msize uint32, version string, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1269,6 +1282,7 @@ func readRversion(r io.Reader) (tag uint16, msize uint32, version string, err er
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }
@@ -1353,7 +1367,7 @@ func writeRwalk(w io.Writer, tag uint16, qids []Qid) error {
 }
 
 // size[4] Rwalk tag[2] nwqid*(qid[13])
-func readRwalk(r io.Reader) (tag uint16, qids []Qid, err error) {
+func readRwalk(r io.Reader) (qids []Qid, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1371,6 +1385,7 @@ func readRwalk(r io.Reader) (tag uint16, qids []Qid, err error) {
     err = unexpectedMsgError
     return
   }
+  var tag uint16
   if err = readUint16(r, &tag); err != nil {
     return
   }

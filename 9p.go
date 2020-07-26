@@ -128,7 +128,7 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
 
 	tag.await()
 
-	_, data, err := readRread(c.r)
+	data, err := readRread(c.r)
 	if err != nil {
 		return 0, err
 	}
@@ -160,7 +160,7 @@ func (c *clientConn) Version(msize uint32, version string) (uint32, string, erro
 
 	tag.await()
 
-	_, rmsize, rversion, err := readRversion(c.r)
+	rmsize, rversion, err := readRversion(c.r)
 	if err != nil {
 		c.err = err
 		return 0, "", err
@@ -184,7 +184,7 @@ func (c *clientConn) Auth(afid uint32, uname string, aname string) (Qid, error) 
 
 	tag.await()
 
-	_, qid, err := readRauth(c.r)
+	qid, err := readRauth(c.r)
 	if err != nil {
 		c.err = err
 		return qid, err

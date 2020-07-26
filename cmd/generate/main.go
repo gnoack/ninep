@@ -113,12 +113,22 @@ func getInfo(s string) (string, string, string) {
 	return "", "", ""
 }
 
+func dontReturnTag(name string) bool {
+	// We don't want to return the tag when reading reply data;
+	// the tags are already peeked in advance of reading by the 9p
+	// protocol layer.
+	return name[0] == 'R'
+}
+
 func printReadFunc(ss []string) {
 	name := ss[1]
 	fmt.Print("func read" + name + "(r io.Reader) (")
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
 		if n == "msgType" || n == "size" {
+			continue
+		}
+		if n == "tag" && dontReturnTag(name) {
 			continue
 		}
 		fmt.Print(n + " " + t + ", ")
@@ -139,6 +149,9 @@ func printReadFunc(ss []string) {
 		}
 		if n == "msgType" {
 			fmt.Println("  var msgType uint16")
+		}
+		if n == "tag" && dontReturnTag(name) {
+			fmt.Println("  var tag uint16")
 		}
 		fmt.Printf("  if err = %v(r, &%v); err != nil {\n", funcname, n)
 		fmt.Println("    return")
