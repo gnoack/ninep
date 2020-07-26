@@ -26,8 +26,6 @@ type clientConn struct {
 	// is read.
 	rrmux      sync.Mutex
 	reqReaders map[uint16]callback
-
-	err error
 }
 
 // Peeks at the next available tag without reading it.
@@ -113,27 +111,26 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 	c.tags <- h.tag
 }
 
-func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
+func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err := writeTread(c.w, tag.tag, fid, offset, uint32(len(buf)))
+	err = writeTread(c.w, tag.tag, fid, offset, uint32(len(buf)))
 	c.wmux.Unlock()
 
 	if err != nil {
-		c.err = err
-		return 0, err
+		return
 	}
 
 	tag.await()
 
 	data, err := readRread(c.r)
 	if err != nil {
-		return 0, err
+		return
 	}
 
-	n := copy(data, buf)
+	n = copy(data, buf)
 	return n, nil
 
 	// TODO: Would be nice to fill the buf buffer directly instead of copying it over.
@@ -145,49 +142,36 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
 	// }
 }
 
-func (c *clientConn) Version(msize uint32, version string) (uint32, string, error) {
+func (c *clientConn) Version(msize uint32, version string) (rmsize uint32, rversion string, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err := writeTversion(c.w, tag.tag, msize, version)
+	err = writeTversion(c.w, tag.tag, msize, version)
 	c.wmux.Unlock()
 
 	if err != nil {
-		c.err = err
-		return 0, "", err
+		return
 	}
 
 	tag.await()
 
-	rmsize, rversion, err := readRversion(c.r)
-	if err != nil {
-		c.err = err
-		return 0, "", err
-	}
-
-	return rmsize, rversion, nil
+	return readRversion(c.r)
 }
 
-func (c *clientConn) Auth(afid uint32, uname string, aname string) (Qid, error) {
+func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid Qid, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err := writeTauth(c.w, tag.tag, afid, uname, aname)
+	err = writeTauth(c.w, tag.tag, afid, uname, aname)
 	c.wmux.Unlock()
 
 	if err != nil {
-		c.err = err
-		return Qid{}, err
+		return
 	}
 
 	tag.await()
 
-	qid, err := readRauth(c.r)
-	if err != nil {
-		c.err = err
-		return qid, err
-	}
-	return qid, err
+	return readRauth(c.r)
 }
