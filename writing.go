@@ -80,49 +80,6 @@ func writeUint64(w io.Writer, v uint64) error {
 	return binary.Write(w, binary.LittleEndian, v)
 }
 
-func writeStat(w io.Writer, s Stat) error {
-	if err := writeUint16(w, s.Type); err != nil {
-		return err
-	}
-	if err := writeUint32(w, s.Dev); err != nil {
-		return err
-	}
-	if err := writeUint8(w, s.QidType); err != nil {
-		return err
-	}
-	if err := writeUint32(w, s.QidVers); err != nil {
-		return err
-	}
-	if err := writeUint64(w, s.QidPath); err != nil {
-		return err
-	}
-	if err := writeUint32(w, s.Mode); err != nil {
-		return err
-	}
-	if err := writeUint32(w, s.Atime); err != nil {
-		return err
-	}
-	if err := writeUint32(w, s.Mtime); err != nil {
-		return err
-	}
-	if err := writeUint64(w, s.Length); err != nil {
-		return err
-	}
-	if err := writeString(w, s.Name); err != nil {
-		return err
-	}
-	if err := writeString(w, s.Uid); err != nil {
-		return err
-	}
-	if err := writeString(w, s.Gid); err != nil {
-		return err
-	}
-	if err := writeString(w, s.Muid); err != nil {
-		return err
-	}
-	return nil
-}
-
 func stringSliceSize(ss []string) (size uint32) {
 	size += 2 // number of strings in slice
 	for _, s := range ss {
