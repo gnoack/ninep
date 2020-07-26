@@ -113,6 +113,54 @@ func getInfo(s string) (string, string, string) {
 	return "", "", ""
 }
 
+func printReadFunc(ss []string) {
+	name := ss[1]
+	fmt.Print("func read" + name + "(r io.Reader) (")
+	for _, s := range ss {
+		t, n, _ := getInfo(s)
+		if n == "msgType" || n == "size" {
+			continue
+		}
+		fmt.Print(n + " " + t + ", ")
+	}
+	fmt.Println("err error) {")
+	fmt.Println("  var size uint32")
+	for _, s := range ss {
+		t, n, _ := getInfo(s)
+		funcname := fmt.Sprintf("read%v", strings.Title(t))
+		if t == "[]string" {
+			funcname = "readStringSlice"
+		}
+		if t == "[]Qid" {
+			funcname = "readQidSlice"
+		}
+		if t == "[]byte" {
+			funcname = "readByteSlice"
+		}
+		if n == "msgType" {
+			fmt.Println("  var msgType uint16")
+		}
+		fmt.Printf("  if err = %v(r, &%v); err != nil {\n", funcname, n)
+		fmt.Println("    return")
+		fmt.Println("  }")
+		if n == "msgType" {
+			if name[0] == 'R' {
+				fmt.Println("  if msgType == Rerror {")
+				fmt.Println("    // XXX Read error contents")
+				fmt.Println("    err = backendError")
+				fmt.Println("    return")
+				fmt.Println("  }")
+			}
+			fmt.Println("  if msgType !=", name, "{")
+			fmt.Println("    err = unexpectedMsgError")
+			fmt.Println("    return")
+			fmt.Println("  }")
+		}
+	}
+	fmt.Println("  return")
+	fmt.Println("}")
+}
+
 func printWriteFunc(ss []string) {
 	name := ss[1]
 	var msgType string
@@ -223,5 +271,9 @@ import "io"`)
 		fmt.Println()
 		printComment(ss)
 		printWriteFunc(ss)
+
+		fmt.Println()
+		printComment(ss)
+		printReadFunc(ss)
 	}
 }

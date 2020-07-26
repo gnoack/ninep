@@ -124,6 +124,7 @@ func writeStat(w io.Writer, s Stat) error {
 }
 
 func stringSliceSize(ss []string) (size uint32) {
+	size += 2 // number of strings in slice
 	for _, s := range ss {
 		size += 2 + uint32(len(s))
 	}

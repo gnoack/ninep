@@ -1,15 +1,17 @@
 package ninep
 
 import (
+	"bufio"
 	"context"
-	"errors"
+	"encoding/binary"
+	"fmt"
 	"io"
 	"sync"
 )
 
 const tRead = 123
 
-type callback func(uint32, uint16, reader9p)
+type callback func()
 
 // clientConn represents a connection to a 9p server.
 type clientConn struct {
@@ -18,7 +20,7 @@ type clientConn struct {
 	wmux sync.Mutex
 	w    io.Writer
 
-	r io.Reader
+	r *bufio.Reader
 
 	// Callbacks that get called when a message for the given tag
 	// is read.
@@ -28,14 +30,25 @@ type clientConn struct {
 	err error
 }
 
-// Runs the background reader goroutine which dispatches requests.
-func (c *clientConn) Run(ctx context.Context) {
-	// TODO: Context cancelation.
-	r9 := reader9p{Reader: c.r}
-	for {
-		size, type9p, tag := r9.Header()
+// Peeks at the next available tag without reading it.
+func peekTag(r *bufio.Reader) (uint16, error) {
+	buf, err := r.Peek(4 + 2 + 2)
+	if err != nil {
+		return 0, err
+	}
+	return binary.LittleEndian.Uint16(buf[6:8]), nil
+}
 
-		c.getReqReader(tag)(size, type9p, r9)
+// Runs the background reader goroutine which dispatches requests.
+func (c *clientConn) Run(ctx context.Context) error {
+	// TODO: Context cancellation.
+	for {
+		tag, err := peekTag(c.r)
+		if err != nil {
+			return fmt.Errorf("Peek error when expecting next message: %w", err)
+		}
+
+		c.getReqReader(tag)() // blocking
 	}
 }
 
@@ -45,7 +58,7 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 
 	rr, ok := c.reqReaders[tag]
 	if !ok {
-		return func(size uint32, type9p uint16, r9 reader9p) {
+		return func() {
 			// XXX: Skip next message and log, nothing is registered.
 		}
 	}
@@ -67,50 +80,37 @@ func (c *clientConn) clearReqReader(tag uint16) {
 	delete(c.reqReaders, tag)
 }
 
-type msgHeader struct {
-	size   uint32
-	type9p uint16
-	r9     reader9p
-}
-
 type tagHandle struct {
 	tag uint16
 	// Reader Run loop sends a msg header for that tag if found.
-	ch chan msgHeader
+	readyToRead chan struct{}
 	// The handling function replies back to the reader run loop
 	// through this channel.
-	done chan struct{}
+	doneReading chan struct{}
 }
 
-func (h *tagHandle) await() (size uint32, type9p uint16, r9 reader9p) {
-	s := <-h.ch
-	return s.size, s.type9p, s.r9
+func (h *tagHandle) await() {
+	<-h.readyToRead
 }
 
 func (c *clientConn) acquireTag() *tagHandle {
 	h := &tagHandle{
-		tag:  <-c.tags,
-		ch:   make(chan msgHeader),
-		done: make(chan struct{}),
+		tag:         <-c.tags,
+		readyToRead: make(chan struct{}),
+		doneReading: make(chan struct{}),
 	}
-	c.setReqReader(h.tag, func(size uint32, type9p uint16, r9 reader9p) {
+	c.setReqReader(h.tag, func() {
 		// Invoked by reader run loop to read the given message.
-		h.ch <- msgHeader{size: size, type9p: type9p, r9: r9}
-		<-h.done
+		h.readyToRead <- struct{}{}
+		<-h.doneReading
 	})
 	return h
 }
 
 func (c *clientConn) releaseTag(h *tagHandle) {
-	close(h.done)
+	close(h.doneReading)
 	c.clearReqReader(h.tag)
 	c.tags <- h.tag
-}
-
-func (c *clientConn) readError(r9 reader9p) error {
-	s := r9.String()
-	// todo: check for r9 error
-	return errors.New(s)
 }
 
 func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
@@ -126,21 +126,68 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (int, error) {
 		return 0, err
 	}
 
-	size, type9p, r9 := tag.await()
+	tag.await()
 
-	if type9p == Rerror {
-		return 0, c.readError(r9)
+	_, data, err := readRread(c.r)
+	if err != nil {
+		return 0, err
 	}
-	_, _ = size, type9p // XXX
 
-	n := int(r9.Uint16())
-	buf = buf[:n]
-	if _, err := io.ReadFull(r9, buf); err != nil {
+	n := copy(data, buf)
+	return n, nil
+
+	// TODO: Would be nice to fill the buf buffer directly instead of copying it over.
+	// n := int(r9.Uint16())
+	// buf = buf[:n]
+	// if _, err := io.ReadFull(r9, buf); err != nil {
+	// 	c.err = err
+	// 	return 0, c.err
+	// }
+}
+
+func (c *clientConn) Version(msize uint32, version string) (uint32, string, error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err := writeTversion(c.w, tag.tag, msize, version)
+	c.wmux.Unlock()
+
+	if err != nil {
 		c.err = err
-		return 0, c.err
+		return 0, "", err
 	}
 
-	// todo: check for r9 error
+	tag.await()
 
-	return n, c.err
+	_, rmsize, rversion, err := readRversion(c.r)
+	if err != nil {
+		c.err = err
+		return 0, "", err
+	}
+
+	return rmsize, rversion, nil
+}
+
+func (c *clientConn) Auth(afid uint32, uname string, aname string) (Qid, error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err := writeTauth(c.w, tag.tag, afid, uname, aname)
+	c.wmux.Unlock()
+
+	if err != nil {
+		c.err = err
+		return Qid{}, err
+	}
+
+	tag.await()
+
+	_, qid, err := readRauth(c.r)
+	if err != nil {
+		c.err = err
+		return qid, err
+	}
+	return qid, err
 }
