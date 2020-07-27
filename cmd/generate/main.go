@@ -98,7 +98,7 @@ func getInfo(s string) (string, string, string) {
 	case strings.HasSuffix(s, "[s]"):
 		return "string", name, fmt.Sprintf("(2 + len(%v))", name)
 	case strings.HasPrefix(s, "T") || strings.HasPrefix(s, "R"):
-		return "uint16", "msgType", "2"
+		return "uint8", "msgType", "1"
 	case s == "stat[n]":
 		return "Stat", name, fmt.Sprintf("(39 + 8 + len(%v.Name) + len(%v.Uid) + len(%v.Gid) + len(%v.Muid))", name, name, name, name)
 	case strings.HasSuffix(s, "[count[4]]"):
@@ -148,7 +148,7 @@ func printReadFunc(ss []string) {
 			funcname = "readByteSlice"
 		}
 		if n == "msgType" {
-			fmt.Println("  var msgType uint16")
+			fmt.Println("  var msgType uint8")
 		}
 		if n == "tag" && dontReturnTag(name) {
 			fmt.Println("  var tag uint16")

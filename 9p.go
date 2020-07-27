@@ -31,11 +31,11 @@ type clientConn struct {
 
 // Peeks at the next available tag without reading it.
 func peekTag(r *bufio.Reader) (uint16, error) {
-	buf, err := r.Peek(4 + 2 + 2)
+	buf, err := r.Peek(4 + 1 + 2)
 	if err != nil {
 		return 0, err
 	}
-	return binary.LittleEndian.Uint16(buf[6:8]), nil
+	return binary.LittleEndian.Uint16(buf[5:7]), nil
 }
 
 // Runs the background reader goroutine which dispatches requests.
@@ -57,8 +57,18 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 
 	rr, ok := c.reqReaders[tag]
 	if !ok {
+		// Skip message and log, nothing is registered for the tag.
 		return func() {
-			// XXX: Skip next message and log, nothing is registered.
+			// TODO: handle errors correctly
+			var size uint32
+			if err := readUint32(c.r, &size); err != nil {
+				return
+			}
+			buf := make([]byte, size-4)
+			n, err := c.r.Read(buf)
+			if err != nil || n < int(size-4) {
+				return
+			}
 		}
 	}
 
@@ -131,7 +141,7 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err err
 		return
 	}
 
-	n = copy(data, buf)
+	n = copy(buf, data)
 	return n, nil
 
 	// TODO: Would be nice to fill the buf buffer directly instead of copying it over.
@@ -209,4 +219,49 @@ func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []Qid, err e
 	tag.await()
 
 	return readRwalk(c.r)
+}
+
+// The following modes are defined in open(9p) and can be used for
+// opening and creating files:
+const (
+	ORead   = 0x0
+	OWrite  = 0x1
+	ORdWr   = 0x2
+	OExec   = 0x3
+	OTrunc  = 0x10 // truncate
+	ORClose = 0x40 // delete on clunk
+)
+
+func (c *clientConn) Open(fid uint32, mode uint8) (qid Qid, iounit uint32, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTopen(c.w, tag.tag, fid, mode)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRopen(c.r)
+}
+
+func (c *clientConn) Clunk(fid uint32) (err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTclunk(c.w, tag.tag, fid)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRclunk(c.r)
 }
