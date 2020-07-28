@@ -1,41 +1,81 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/gnoack/ninep"
 )
 
+func usage() {
+	fmt.Fprintf(flag.CommandLine.Output(), "Usage\n")
+	fmt.Fprintf(flag.CommandLine.Output(), "     %s CMD PATH\n", os.Args[0])
+	fmt.Fprintf(flag.CommandLine.Output(), "e.g. %s cat sources/plan9/NOTICE\n\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
+func parsePositionalArgs() (cmd string, service string, path string) {
+	if len(flag.Args()) != 2 {
+		log.Fatal("Could not parse positional args; want [cmd] [path]")
+	}
+	cmd = flag.Args()[0]
+	arg := flag.Args()[1]
+	parts := strings.SplitN(arg, "/", 2)
+	service = parts[0]
+	if len(parts) == 2 {
+		path = parts[1]
+	}
+	return
+}
+
+func formatStat(stat os.FileInfo) string {
+	sys := stat.Sys().(ninep.Stat)
+	return fmt.Sprintf("%s %8d %8s %8s %s",
+		stat.Mode().String(), stat.Size(), sys.Uid, sys.Gid, stat.Name())
+}
+
 func main() {
-	c, err := ninep.Dial("sources")
+	flag.Usage = usage
+	flag.Parse()
+	cmd, service, path := parsePositionalArgs()
+
+	c, err := ninep.DialFS(service)
 	if err != nil {
-		log.Fatalf("Dial: %v", err)
+		log.Fatalf("DialFS(%q): %v", service, err)
 	}
-	_ = c
-	//fid := uint32(0)
 
-	rootFid := uint32(0)
-	newFid := uint32(1)
-
-	components := []string{"plan9", "NOTICE"}
-	qids, err := c.Walk(rootFid, newFid, components)
-	if err != nil {
-		log.Fatalf("Walk: %v", err)
-	}
-	fmt.Println("walked to", qids)
-
-	_, _, err = c.Open(newFid, ninep.ORead)
+	r, err := c.Open(path)
 	if err != nil {
 		log.Fatalf("Open: %v", err)
 	}
-	defer c.Clunk(newFid)
+	defer r.Close()
 
-	var buf [1000]byte
-	n, err := c.Read(newFid, 0, buf[:])
-	if err != nil {
-		log.Fatalf("Read: %v", err)
+	switch cmd {
+	case "cat":
+		buf, err := ioutil.ReadAll(r)
+		if err != nil {
+			log.Fatalf("Read: %v", err)
+		}
+		os.Stdout.Write(buf)
+
+	case "stat":
+		stat, err := r.Stat()
+		if err != nil {
+			log.Fatalf("Stat: %v", err)
+		}
+		fmt.Println(formatStat(stat))
+
+	case "ls":
+		infos, err := r.ReadDir(0)
+		if err != nil {
+			log.Fatalf("ReadDir: %v", err)
+		}
+		for _, info := range infos {
+			fmt.Println(formatStat(info))
+		}
 	}
-	fmt.Println("read", n, "bytes")
-	fmt.Println(string(buf[:n]))
 }

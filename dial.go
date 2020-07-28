@@ -63,6 +63,14 @@ func handshake(c net.Conn) error {
 	return nil
 }
 
+func DialFS(service string) (*fs, error) {
+	cc, err := Dial(service)
+	if err != nil {
+		return nil, err
+	}
+	return &fs{cc: cc}, nil
+}
+
 func Dial(service string) (*clientConn, error) {
 	// Dial options
 	tagCapacity := uint16(20) // TODO
