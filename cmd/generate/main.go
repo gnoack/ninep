@@ -147,6 +147,13 @@ func printReadFunc(ss []string) {
 		if t == "[]byte" {
 			funcname = "readByteSlice"
 		}
+		if s == "stat[n]" {
+			fmt.Println("  // TODO: Why is this doubly size delimited?")
+			fmt.Println("  var outerStatSize uint16")
+			fmt.Println("  if err = readUint16(r, &outerStatSize); err != nil {")
+			fmt.Println("    return")
+			fmt.Println("  }")
+		}
 		if n == "msgType" {
 			fmt.Println("  var msgType uint8")
 		}
@@ -156,11 +163,14 @@ func printReadFunc(ss []string) {
 		fmt.Printf("  if err = %v(r, &%v); err != nil {\n", funcname, n)
 		fmt.Println("    return")
 		fmt.Println("  }")
-		if n == "msgType" {
+		if n == "tag" {
 			if name[0] == 'R' {
 				fmt.Println("  if msgType == Rerror {")
-				fmt.Println("    // XXX Read error contents")
-				fmt.Println("    err = backendError")
+				fmt.Println("    var errmsg string")
+				fmt.Println("    if err = readString(r, &errmsg); err != nil {")
+				fmt.Println("      return")
+				fmt.Println("    }")
+				fmt.Println("    err = errors.New(errmsg)")
 				fmt.Println("    return")
 				fmt.Println("  }")
 			}
@@ -277,7 +287,10 @@ func main() {
 
 	fmt.Println(`package ninep
 
-import "io"`)
+import (
+  "errors"
+  "io"
+)`)
 
 	for ss := range out {
 		ss = conflate(ss)

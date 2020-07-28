@@ -1,6 +1,9 @@
 package ninep
 
-import "io"
+import (
+  "errors"
+  "io"
+)
 
 // size[4] Tauth tag[2] afid[4] uname[s] aname[s]
 func writeTauth(w io.Writer, tag uint16, afid uint32, uname string, aname string) error {
@@ -36,11 +39,11 @@ func readTauth(r io.Reader) (tag uint16, afid uint32, uname string, aname string
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tauth {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tauth {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &afid); err != nil {
@@ -83,17 +86,20 @@ func readRauth(r io.Reader) (aqid Qid, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rauth {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQid(r, &aqid); err != nil {
@@ -139,11 +145,11 @@ func readTattach(r io.Reader) (tag uint16, fid uint32, afid uint32, uname string
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tattach {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tattach {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -189,17 +195,20 @@ func readRattach(r io.Reader) (qid Qid, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rattach {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -236,11 +245,11 @@ func readTclunk(r io.Reader) (tag uint16, fid uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tclunk {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tclunk {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -274,17 +283,20 @@ func readRclunk(r io.Reader) (err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rclunk {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   return
@@ -318,17 +330,20 @@ func readRerror(r io.Reader) (ename string, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rerror {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readString(r, &ename); err != nil {
@@ -365,11 +380,11 @@ func readTflush(r io.Reader) (tag uint16, oldtag uint16, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tflush {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tflush {
+    err = unexpectedMsgError
     return
   }
   if err = readUint16(r, &oldtag); err != nil {
@@ -403,17 +418,20 @@ func readRflush(r io.Reader) (err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rflush {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   return
@@ -450,11 +468,11 @@ func readTopen(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Topen {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Topen {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -497,17 +515,20 @@ func readRopen(r io.Reader) (qid Qid, iounit uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Ropen {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -556,11 +577,11 @@ func readTcreate(r io.Reader) (tag uint16, fid uint32, name string, perm uint32,
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tcreate {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tcreate {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -609,17 +630,20 @@ func readRcreate(r io.Reader) (qid Qid, iounit uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rcreate {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -662,11 +686,11 @@ func readTopenfd(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Topenfd {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Topenfd {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -712,17 +736,20 @@ func readRopenfd(r io.Reader) (qid Qid, iounit uint32, unixfd uint32, err error)
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Ropenfd {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -771,11 +798,11 @@ func readTread(r io.Reader) (tag uint16, fid uint32, offset uint64, count uint32
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tread {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tread {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -818,17 +845,20 @@ func readRread(r io.Reader) (data []byte, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rread {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readByteSlice(r, &data); err != nil {
@@ -871,11 +901,11 @@ func readTwrite(r io.Reader) (tag uint16, fid uint32, offset uint64, data []byte
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Twrite {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Twrite {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -918,17 +948,20 @@ func readRwrite(r io.Reader) (count uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rwrite {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readUint32(r, &count); err != nil {
@@ -965,11 +998,11 @@ func readTremove(r io.Reader) (tag uint16, fid uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tremove {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tremove {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1003,17 +1036,20 @@ func readRremove(r io.Reader) (err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rremove {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   return
@@ -1047,11 +1083,11 @@ func readTstat(r io.Reader) (tag uint16, fid uint32, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tstat {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tstat {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1088,17 +1124,25 @@ func readRstat(r io.Reader) (stat Stat, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rstat {
     err = unexpectedMsgError
     return
   }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
+  // TODO: Why is this doubly size delimited?
+  var outerStatSize uint16
+  if err = readUint16(r, &outerStatSize); err != nil {
     return
   }
   if err = readStat(r, &stat); err != nil {
@@ -1138,14 +1182,19 @@ func readTwstat(r io.Reader) (tag uint16, fid uint32, stat Stat, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType != Twstat {
     err = unexpectedMsgError
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if err = readUint32(r, &fid); err != nil {
     return
   }
-  if err = readUint32(r, &fid); err != nil {
+  // TODO: Why is this doubly size delimited?
+  var outerStatSize uint16
+  if err = readUint16(r, &outerStatSize); err != nil {
     return
   }
   if err = readStat(r, &stat); err != nil {
@@ -1179,17 +1228,20 @@ func readRwstat(r io.Reader) (err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rwstat {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   return
@@ -1226,11 +1278,11 @@ func readTversion(r io.Reader) (tag uint16, msize uint32, version string, err er
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Tversion {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Tversion {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &msize); err != nil {
@@ -1273,17 +1325,20 @@ func readRversion(r io.Reader) (msize uint32, version string, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rversion {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readUint32(r, &msize); err != nil {
@@ -1329,11 +1384,11 @@ func readTwalk(r io.Reader) (tag uint16, fid uint32, newfid uint32, nwnames []st
   if err = readUint8(r, &msgType); err != nil {
     return
   }
-  if msgType != Twalk {
-    err = unexpectedMsgError
+  if err = readUint16(r, &tag); err != nil {
     return
   }
-  if err = readUint16(r, &tag); err != nil {
+  if msgType != Twalk {
+    err = unexpectedMsgError
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1376,17 +1431,20 @@ func readRwalk(r io.Reader) (qids []Qid, err error) {
   if err = readUint8(r, &msgType); err != nil {
     return
   }
+  var tag uint16
+  if err = readUint16(r, &tag); err != nil {
+    return
+  }
   if msgType == Rerror {
-    // XXX Read error contents
-    err = backendError
+    var errmsg string
+    if err = readString(r, &errmsg); err != nil {
+      return
+    }
+    err = errors.New(errmsg)
     return
   }
   if msgType != Rwalk {
     err = unexpectedMsgError
-    return
-  }
-  var tag uint16
-  if err = readUint16(r, &tag); err != nil {
     return
   }
   if err = readQidSlice(r, &qids); err != nil {
