@@ -123,6 +123,12 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 }
 
 func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
+	// TODO: Truncating the read here to a smaller size. This
+	// should not be hardcoded here, but the max value should be
+	// remembered from version negotiation.
+	if len(buf) > 2000 {
+		buf = buf[:2000]
+	}
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -219,6 +225,23 @@ func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []Qid, err e
 	tag.await()
 
 	return readRwalk(c.r)
+}
+
+func (c *clientConn) Stat(fid uint32) (stat Stat, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTstat(c.w, tag.tag, fid)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRstat(c.r)
 }
 
 // The following modes are defined in open(9p) and can be used for
