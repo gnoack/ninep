@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// The Nofid constant is used to indicate absence of a FID,
+// Nofid is the fid value used to indicate absence of a FID,
 // e.g. to pass as afid when no authentication is required.
 const Nofid uint32 = ^uint32(0)
 
@@ -37,15 +37,15 @@ func handshake(c net.Conn) error {
 	}
 	msize, version, err := readRversion(c)
 	if err != nil {
-		return fmt.Errorf("Version(%q, %q): %w", wantMsize, wantVersion, err)
+		return fmt.Errorf("version(%q, %q): %w", wantMsize, wantVersion, err)
 	}
 
 	if msize < wantMsize {
 		// TODO: Fall back to server-provided msize if needed
-		return fmt.Errorf("Server wanted too high msize of %v", msize)
+		return fmt.Errorf("server wanted too high msize of %v", msize)
 	}
 	if version != wantVersion {
-		return fmt.Errorf("Mismatching version: %q != %q", version, wantVersion)
+		return fmt.Errorf("mismatching version: %q != %q", version, wantVersion)
 	}
 
 	// Afid is nofid when the client doesn't want to authenticate.
@@ -58,7 +58,7 @@ func handshake(c net.Conn) error {
 	}
 	_, err = readRattach(c)
 	if err != nil {
-		return fmt.Errorf("Attach(): %w", err)
+		return fmt.Errorf("attach(): %w", err)
 	}
 	return nil
 }

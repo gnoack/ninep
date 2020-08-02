@@ -9,8 +9,6 @@ import (
 	"sync"
 )
 
-const tRead = 123
-
 type callback func()
 
 // TODO(gnoack): Need a way to close these.
@@ -44,7 +42,7 @@ func (c *clientConn) Run(ctx context.Context) error {
 	for {
 		tag, err := peekTag(c.r)
 		if err != nil {
-			return fmt.Errorf("Peek error when expecting next message: %w", err)
+			return fmt.Errorf("peek error when expecting next message: %w", err)
 		}
 
 		c.getReqReader(tag)() // blocking
