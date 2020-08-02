@@ -35,7 +35,7 @@ func parsePositionalArgs() (cmd string, service string, path string) {
 func formatStat(stat os.FileInfo) string {
 	sys := stat.Sys().(ninep.Stat)
 	return fmt.Sprintf("%s %8d %8s %8s %s",
-		stat.Mode().String(), stat.Size(), sys.Uid, sys.Gid, stat.Name())
+		stat.Mode().String(), stat.Size(), sys.UID, sys.GID, stat.Name())
 }
 
 func main() {

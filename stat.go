@@ -21,9 +21,9 @@ type Stat struct {
 	Mtime  uint32 // last modification time
 	Length uint64 // length of file in bytes
 	Name   string // file name; must be / if the file is the root
-	Uid    string // owner's name
-	Gid    string // group's name
-	Muid   string // name of the user who last modified the file
+	UID    string // owner's name
+	GID    string // group's name
+	MUID   string // name of the user who last modified the file
 }
 
 func readStat(r io.Reader, s *Stat) error {
@@ -62,13 +62,13 @@ func readStat(r io.Reader, s *Stat) error {
 	if err := readString(lr, &s.Name); err != nil {
 		return err
 	}
-	if err := readString(lr, &s.Uid); err != nil {
+	if err := readString(lr, &s.UID); err != nil {
 		return err
 	}
-	if err := readString(lr, &s.Gid); err != nil {
+	if err := readString(lr, &s.GID); err != nil {
 		return err
 	}
-	if err := readString(lr, &s.Muid); err != nil {
+	if err := readString(lr, &s.MUID); err != nil {
 		return err
 	}
 	if lr.N > 0 {
@@ -86,9 +86,9 @@ func stringSize(s string) uint16 {
 func statSize(s Stat) (size uint16) {
 	size += 39 // fixed part
 	size += stringSize(s.Name)
-	size += stringSize(s.Uid)
-	size += stringSize(s.Gid)
-	size += stringSize(s.Muid)
+	size += stringSize(s.UID)
+	size += stringSize(s.GID)
+	size += stringSize(s.MUID)
 	return size
 }
 
@@ -126,13 +126,13 @@ func writeStat(w io.Writer, s Stat) error {
 	if err := writeString(w, s.Name); err != nil {
 		return err
 	}
-	if err := writeString(w, s.Uid); err != nil {
+	if err := writeString(w, s.UID); err != nil {
 		return err
 	}
-	if err := writeString(w, s.Gid); err != nil {
+	if err := writeString(w, s.GID); err != nil {
 		return err
 	}
-	if err := writeString(w, s.Muid); err != nil {
+	if err := writeString(w, s.MUID); err != nil {
 		return err
 	}
 	return nil

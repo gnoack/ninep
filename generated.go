@@ -1234,7 +1234,7 @@ func writeRstat(w io.Writer, tag uint16, stat Stat) error {
   if *debugLog {
     log.Println("<-", "Rstat", "tag:", tag, "stat:", stat)
   }
-  size := uint32(4 + 1 + 2 + (39 + 8 + len(stat.Name) + len(stat.Uid) + len(stat.Gid) + len(stat.Muid)))
+  size := uint32(4 + 1 + 2 + (39 + 8 + len(stat.Name) + len(stat.UID) + len(stat.GID) + len(stat.MUID)))
   if err := writeUint32(w, size); err != nil {
     return err
   }
@@ -1295,7 +1295,7 @@ func writeTwstat(w io.Writer, tag uint16, fid uint32, stat Stat) error {
   if *debugLog {
     log.Println("->", "Twstat", "tag:", tag, "fid:", fid, "stat:", stat)
   }
-  size := uint32(4 + 1 + 2 + 4 + (39 + 8 + len(stat.Name) + len(stat.Uid) + len(stat.Gid) + len(stat.Muid)))
+  size := uint32(4 + 1 + 2 + 4 + (39 + 8 + len(stat.Name) + len(stat.UID) + len(stat.GID) + len(stat.MUID)))
   if err := writeUint32(w, size); err != nil {
     return err
   }

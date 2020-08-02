@@ -100,7 +100,7 @@ func getInfo(s string) (string, string, string) {
 	case strings.HasPrefix(s, "T") || strings.HasPrefix(s, "R"):
 		return "uint8", "msgType", "1"
 	case s == "stat[n]":
-		return "Stat", name, fmt.Sprintf("(39 + 8 + len(%v.Name) + len(%v.Uid) + len(%v.Gid) + len(%v.Muid))", name, name, name, name)
+		return "Stat", name, fmt.Sprintf("(39 + 8 + len(%v.Name) + len(%v.UID) + len(%v.GID) + len(%v.MUID))", name, name, name, name)
 	case strings.HasSuffix(s, "[count[4]]"):
 		return "[]byte", name, fmt.Sprintf("(4 + len(%v))", name)
 	case s == "nwname*(wname[s])":
