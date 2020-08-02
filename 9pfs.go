@@ -14,9 +14,13 @@ type file struct {
 	fid    uint32
 	cc     *clientConn
 	offset uint64
+	iounit uint32
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
+	if uint32(len(p)) > f.iounit {
+		p = p[:f.iounit]
+	}
 	n, err = f.cc.Read(f.fid, f.offset, p)
 	if err != nil {
 		return 0, err
@@ -87,9 +91,15 @@ func (f *fs) Open(name string) (*file, error) {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	_, _, err = f.cc.Open(f.nextFid, ORead)
+	_, iounit, err := f.cc.Open(f.nextFid, ORead)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
-	return &file{fid: f.nextFid, cc: f.cc}, nil
+	// TODO: If iounit is 0, do we need to fall back to
+	// connection message size - 24?
+	if iounit == 0 {
+		return nil, fmt.Errorf("9p open: iounit is 0")
+	}
+
+	return &file{fid: f.nextFid, cc: f.cc, iounit: iounit}, nil
 }

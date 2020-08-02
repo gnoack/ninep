@@ -122,13 +122,12 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 	c.tags <- h.tag
 }
 
+// Read from an open fid.
+//
+// offset indicates the offset into the file where to read
+// buf is the buffer to read into and may not be larger than
+// the fid's iounit as returned by Open().
 func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
-	// TODO: Truncating the read here to a smaller size. This
-	// should not be hardcoded here, but the max value should be
-	// remembered from version negotiation.
-	if len(buf) > 2000 {
-		buf = buf[:2000]
-	}
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
