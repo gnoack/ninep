@@ -120,6 +120,30 @@ func dontReturnTag(name string) bool {
 	return name[0] == 'R'
 }
 
+func printDebugLine(name string, ss []string) {
+	request := name[0] == 'T'
+
+	fmt.Println("  if *debugLog {")
+	if request {
+		fmt.Print("    log.Println(\"->\"")
+	} else {
+		fmt.Print("    log.Println(\"<-\"")
+	}
+	for _, s := range ss {
+		_, n, _ := getInfo(s)
+		if n == "size" {
+			continue
+		}
+		if n == "msgType" {
+			fmt.Printf(", \"%v\"", name)
+			continue
+		}
+		fmt.Printf(", \"%v:\", %v", n, n)
+	}
+	fmt.Println(")")
+	fmt.Println("  }")
+}
+
 func printReadFunc(ss []string) {
 	name := ss[1]
 	fmt.Print("func read" + name + "(r io.Reader) (")
@@ -134,6 +158,8 @@ func printReadFunc(ss []string) {
 		fmt.Print(n + " " + t + ", ")
 	}
 	fmt.Println("err error) {")
+
+	// Reading
 	fmt.Println("  var size uint32")
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
@@ -165,6 +191,7 @@ func printReadFunc(ss []string) {
 		fmt.Println("  }")
 		if n == "tag" {
 			if name[0] == 'R' {
+				// XXX: Check whether this reads the full error message. (Unix extensions?)
 				fmt.Println("  if msgType == Rerror {")
 				fmt.Println("    var errmsg string")
 				fmt.Println("    if err = readString(r, &errmsg); err != nil {")
@@ -180,6 +207,8 @@ func printReadFunc(ss []string) {
 			fmt.Println("  }")
 		}
 	}
+	printDebugLine(name, ss)
+
 	fmt.Println("  return")
 	fmt.Println("}")
 }
@@ -205,6 +234,9 @@ func printWriteFunc(ss []string) {
 		}
 	}
 	fmt.Println(") error {")
+
+	printDebugLine(name, ss)
+
 	// Size calculation
 	fmt.Print("  size := uint32(")
 	for i, s := range ss {
@@ -290,6 +322,7 @@ func main() {
 import (
   "errors"
   "io"
+  "log"
 )`)
 
 	for ss := range out {
