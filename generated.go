@@ -47,7 +47,7 @@ func readTauth(r io.Reader) (tag uint16, afid uint32, uname string, aname string
     return
   }
   if msgType != Tauth {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &afid); err != nil {
@@ -109,7 +109,7 @@ func readRauth(r io.Reader) (aqid Qid, err error) {
     return
   }
   if msgType != Rauth {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQid(r, &aqid); err != nil {
@@ -165,7 +165,7 @@ func readTattach(r io.Reader) (tag uint16, fid uint32, afid uint32, uname string
     return
   }
   if msgType != Tattach {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -230,7 +230,7 @@ func readRattach(r io.Reader) (qid Qid, err error) {
     return
   }
   if msgType != Rattach {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -277,7 +277,7 @@ func readTclunk(r io.Reader) (tag uint16, fid uint32, err error) {
     return
   }
   if msgType != Tclunk {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -330,7 +330,7 @@ func readRclunk(r io.Reader) (err error) {
     return
   }
   if msgType != Rclunk {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if *debugLog {
@@ -383,7 +383,7 @@ func readRerror(r io.Reader) (ename string, err error) {
     return
   }
   if msgType != Rerror {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readString(r, &ename); err != nil {
@@ -430,7 +430,7 @@ func readTflush(r io.Reader) (tag uint16, oldtag uint16, err error) {
     return
   }
   if msgType != Tflush {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint16(r, &oldtag); err != nil {
@@ -483,7 +483,7 @@ func readRflush(r io.Reader) (err error) {
     return
   }
   if msgType != Rflush {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if *debugLog {
@@ -530,7 +530,7 @@ func readTopen(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
     return
   }
   if msgType != Topen {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -592,7 +592,7 @@ func readRopen(r io.Reader) (qid Qid, iounit uint32, err error) {
     return
   }
   if msgType != Ropen {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -651,7 +651,7 @@ func readTcreate(r io.Reader) (tag uint16, fid uint32, name string, perm uint32,
     return
   }
   if msgType != Tcreate {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -719,7 +719,7 @@ func readRcreate(r io.Reader) (qid Qid, iounit uint32, err error) {
     return
   }
   if msgType != Rcreate {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -772,7 +772,7 @@ func readTopenfd(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
     return
   }
   if msgType != Topenfd {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -837,7 +837,7 @@ func readRopenfd(r io.Reader) (qid Qid, iounit uint32, unixfd uint32, err error)
     return
   }
   if msgType != Ropenfd {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQid(r, &qid); err != nil {
@@ -896,7 +896,7 @@ func readTread(r io.Reader) (tag uint16, fid uint32, offset uint64, count uint32
     return
   }
   if msgType != Tread {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -958,7 +958,7 @@ func readRread(r io.Reader) (data []byte, err error) {
     return
   }
   if msgType != Rread {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readByteSlice(r, &data); err != nil {
@@ -1011,7 +1011,7 @@ func readTwrite(r io.Reader) (tag uint16, fid uint32, offset uint64, data []byte
     return
   }
   if msgType != Twrite {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1073,7 +1073,7 @@ func readRwrite(r io.Reader) (count uint32, err error) {
     return
   }
   if msgType != Rwrite {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &count); err != nil {
@@ -1120,7 +1120,7 @@ func readTremove(r io.Reader) (tag uint16, fid uint32, err error) {
     return
   }
   if msgType != Tremove {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1173,7 +1173,7 @@ func readRremove(r io.Reader) (err error) {
     return
   }
   if msgType != Rremove {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if *debugLog {
@@ -1217,7 +1217,7 @@ func readTstat(r io.Reader) (tag uint16, fid uint32, err error) {
     return
   }
   if msgType != Tstat {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1273,7 +1273,7 @@ func readRstat(r io.Reader) (stat Stat, err error) {
     return
   }
   if msgType != Rstat {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   // TODO: Why is this doubly size delimited?
@@ -1328,7 +1328,7 @@ func readTwstat(r io.Reader) (tag uint16, fid uint32, stat Stat, err error) {
     return
   }
   if msgType != Twstat {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1389,7 +1389,7 @@ func readRwstat(r io.Reader) (err error) {
     return
   }
   if msgType != Rwstat {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if *debugLog {
@@ -1436,7 +1436,7 @@ func readTversion(r io.Reader) (tag uint16, msize uint32, version string, err er
     return
   }
   if msgType != Tversion {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &msize); err != nil {
@@ -1498,7 +1498,7 @@ func readRversion(r io.Reader) (msize uint32, version string, err error) {
     return
   }
   if msgType != Rversion {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &msize); err != nil {
@@ -1554,7 +1554,7 @@ func readTwalk(r io.Reader) (tag uint16, fid uint32, newfid uint32, nwnames []st
     return
   }
   if msgType != Twalk {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readUint32(r, &fid); err != nil {
@@ -1616,7 +1616,7 @@ func readRwalk(r io.Reader) (qids []Qid, err error) {
     return
   }
   if msgType != Rwalk {
-    err = unexpectedMsgError
+    err = errUnexpectedMsg
     return
   }
   if err = readQidSlice(r, &qids); err != nil {

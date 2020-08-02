@@ -3,5 +3,5 @@ package ninep
 import "errors"
 
 var (
-	unexpectedMsgError error = errors.New("unexpected message")
+	errUnexpectedMsg error = errors.New("unexpected message")
 )

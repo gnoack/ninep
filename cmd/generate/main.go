@@ -202,7 +202,7 @@ func printReadFunc(ss []string) {
 				fmt.Println("  }")
 			}
 			fmt.Println("  if msgType !=", name, "{")
-			fmt.Println("    err = unexpectedMsgError")
+			fmt.Println("    err = errUnexpectedMsg")
 			fmt.Println("    return")
 			fmt.Println("  }")
 		}
