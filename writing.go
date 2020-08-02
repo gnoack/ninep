@@ -32,12 +32,12 @@ func writeStringSlice(w io.Writer, ss []string) error {
 	return nil
 }
 
-func writeQidSlice(w io.Writer, qs []Qid) error {
+func writeQIDSlice(w io.Writer, qs []QID) error {
 	if err := writeUint16(w, uint16(len(qs))); err != nil {
 		return err
 	}
 	for _, q := range qs {
-		if err := writeQid(w, q); err != nil {
+		if err := writeQID(w, q); err != nil {
 			return err
 		}
 	}
@@ -59,8 +59,8 @@ func writeByteSlice(w io.Writer, bs []byte) error {
 	return nil
 }
 
-func writeQid(w io.Writer, q Qid) error {
-	// Qid struct is laid out to serialize correctly.
+func writeQID(w io.Writer, q QID) error {
+	// QID struct is laid out to serialize correctly.
 	return binary.Write(w, binary.LittleEndian, q)
 }
 

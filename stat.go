@@ -14,8 +14,7 @@ type Stat struct {
 	// The type of the file (directory etc.)  represented as a bit
 	// vector corresponding to the high 8 bits of the file's mode
 	// word.
-	// TODO: Use Qid directly here.
-	Qid    Qid
+	QID    QID
 	Mode   uint32 // permissions and flags
 	Atime  uint32 // last access time
 	Mtime  uint32 // last modification time
@@ -38,13 +37,13 @@ func readStat(r io.Reader, s *Stat) error {
 	if err := readUint32(lr, &s.Dev); err != nil {
 		return err
 	}
-	if err := readUint8(lr, &s.Qid.Kind); err != nil {
+	if err := readUint8(lr, &s.QID.Kind); err != nil {
 		return err
 	}
-	if err := readUint32(lr, &s.Qid.Vers); err != nil {
+	if err := readUint32(lr, &s.QID.Vers); err != nil {
 		return err
 	}
-	if err := readUint64(lr, &s.Qid.Path); err != nil {
+	if err := readUint64(lr, &s.QID.Path); err != nil {
 		return err
 	}
 	if err := readUint32(lr, &s.Mode); err != nil {
@@ -102,13 +101,13 @@ func writeStat(w io.Writer, s Stat) error {
 	if err := writeUint32(w, s.Dev); err != nil {
 		return err
 	}
-	if err := writeUint8(w, s.Qid.Kind); err != nil {
+	if err := writeUint8(w, s.QID.Kind); err != nil {
 		return err
 	}
-	if err := writeUint32(w, s.Qid.Vers); err != nil {
+	if err := writeUint32(w, s.QID.Vers); err != nil {
 		return err
 	}
-	if err := writeUint64(w, s.Qid.Path); err != nil {
+	if err := writeUint64(w, s.QID.Path); err != nil {
 		return err
 	}
 	if err := writeUint32(w, s.Mode); err != nil {

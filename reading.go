@@ -34,15 +34,15 @@ func readStringSlice(r io.Reader, ss *[]string) error {
 	return nil
 }
 
-func readQidSlice(r io.Reader, qs *[]Qid) error {
+func readQIDSlice(r io.Reader, qs *[]QID) error {
 	var size uint16
 	if err := binary.Read(r, binary.LittleEndian, &size); err != nil {
 		return err
 	}
-	*qs = make([]Qid, 0, size)
+	*qs = make([]QID, 0, size)
 	for i := uint16(0); i < size; i++ {
-		var q Qid
-		if err := readQid(r, &q); err != nil {
+		var q QID
+		if err := readQID(r, &q); err != nil {
 			return err
 		}
 		*qs = append(*qs, q)
@@ -50,7 +50,7 @@ func readQidSlice(r io.Reader, qs *[]Qid) error {
 	return nil
 }
 
-func readQid(r io.Reader, q *Qid) error {
+func readQID(r io.Reader, q *QID) error {
 	return binary.Read(r, binary.LittleEndian, q)
 }
 

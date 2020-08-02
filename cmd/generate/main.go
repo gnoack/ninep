@@ -94,7 +94,7 @@ func getInfo(s string) (string, string, string) {
 	case strings.HasSuffix(s, "[8]"):
 		return "uint64", name, "8"
 	case strings.HasSuffix(s, "[13]"):
-		return "Qid", name, "13"
+		return "QID", name, "13"
 	case strings.HasSuffix(s, "[s]"):
 		return "string", name, fmt.Sprintf("(2 + len(%v))", name)
 	case strings.HasPrefix(s, "T") || strings.HasPrefix(s, "R"):
@@ -106,7 +106,7 @@ func getInfo(s string) (string, string, string) {
 	case s == "nwname*(wname[s])":
 		return "[]string", "nwnames", "stringSliceSize(nwnames)"
 	case s == "nwqid*(qid[13])":
-		return "[]Qid", "qids", "(2 + 13*len(qids))"
+		return "[]QID", "qids", "(2 + 13*len(qids))"
 	default:
 		log.Fatalf("unknown type: %q", s)
 	}
@@ -167,8 +167,8 @@ func printReadFunc(ss []string) {
 		if t == "[]string" {
 			funcname = "readStringSlice"
 		}
-		if t == "[]Qid" {
-			funcname = "readQidSlice"
+		if t == "[]QID" {
+			funcname = "readQIDSlice"
 		}
 		if t == "[]byte" {
 			funcname = "readByteSlice"
@@ -254,8 +254,8 @@ func printWriteFunc(ss []string) {
 		if t == "[]string" {
 			funcname = "writeStringSlice"
 		}
-		if t == "[]Qid" {
-			funcname = "writeQidSlice"
+		if t == "[]QID" {
+			funcname = "writeQIDSlice"
 		}
 		if t == "[]byte" {
 			funcname = "writeByteSlice"

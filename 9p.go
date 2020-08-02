@@ -173,7 +173,7 @@ func (c *clientConn) Version(msize uint32, version string) (rmsize uint32, rvers
 	return readRversion(c.r)
 }
 
-func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid Qid, err error) {
+func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -190,7 +190,7 @@ func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid Qid, err
 	return readRauth(c.r)
 }
 
-func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid Qid, err error) {
+func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -207,7 +207,7 @@ func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid Qid, err
 	return readRattach(c.r)
 }
 
-func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []Qid, err error) {
+func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -252,7 +252,7 @@ const (
 	ORClose = 0x40 // delete on clunk
 )
 
-func (c *clientConn) Open(fid uint32, mode uint8) (qid Qid, iounit uint32, err error) {
+func (c *clientConn) Open(fid uint32, mode uint8) (qid QID, iounit uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 

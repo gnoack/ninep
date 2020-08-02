@@ -66,7 +66,7 @@ func readTauth(r io.Reader) (tag uint16, afid uint32, uname string, aname string
 }
 
 // size[4] Rauth tag[2] aqid[13]
-func writeRauth(w io.Writer, tag uint16, aqid Qid) error {
+func writeRauth(w io.Writer, tag uint16, aqid QID) error {
   if *debugLog {
     log.Println("<-", "Rauth", "tag:", tag, "aqid:", aqid)
   }
@@ -80,14 +80,14 @@ func writeRauth(w io.Writer, tag uint16, aqid Qid) error {
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQid(w, aqid); err != nil {
+  if err := writeQID(w, aqid); err != nil {
     return err
   }
   return nil
 }
 
 // size[4] Rauth tag[2] aqid[13]
-func readRauth(r io.Reader) (aqid Qid, err error) {
+func readRauth(r io.Reader) (aqid QID, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -112,7 +112,7 @@ func readRauth(r io.Reader) (aqid Qid, err error) {
     err = errUnexpectedMsg
     return
   }
-  if err = readQid(r, &aqid); err != nil {
+  if err = readQID(r, &aqid); err != nil {
     return
   }
   if *debugLog {
@@ -187,7 +187,7 @@ func readTattach(r io.Reader) (tag uint16, fid uint32, afid uint32, uname string
 }
 
 // size[4] Rattach tag[2] qid[13]
-func writeRattach(w io.Writer, tag uint16, qid Qid) error {
+func writeRattach(w io.Writer, tag uint16, qid QID) error {
   if *debugLog {
     log.Println("<-", "Rattach", "tag:", tag, "qid:", qid)
   }
@@ -201,14 +201,14 @@ func writeRattach(w io.Writer, tag uint16, qid Qid) error {
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQid(w, qid); err != nil {
+  if err := writeQID(w, qid); err != nil {
     return err
   }
   return nil
 }
 
 // size[4] Rattach tag[2] qid[13]
-func readRattach(r io.Reader) (qid Qid, err error) {
+func readRattach(r io.Reader) (qid QID, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -233,7 +233,7 @@ func readRattach(r io.Reader) (qid Qid, err error) {
     err = errUnexpectedMsg
     return
   }
-  if err = readQid(r, &qid); err != nil {
+  if err = readQID(r, &qid); err != nil {
     return
   }
   if *debugLog {
@@ -546,7 +546,7 @@ func readTopen(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
 }
 
 // size[4] Ropen tag[2] qid[13] iounit[4]
-func writeRopen(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
+func writeRopen(w io.Writer, tag uint16, qid QID, iounit uint32) error {
   if *debugLog {
     log.Println("<-", "Ropen", "tag:", tag, "qid:", qid, "iounit:", iounit)
   }
@@ -560,7 +560,7 @@ func writeRopen(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQid(w, qid); err != nil {
+  if err := writeQID(w, qid); err != nil {
     return err
   }
   if err := writeUint32(w, iounit); err != nil {
@@ -570,7 +570,7 @@ func writeRopen(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
 }
 
 // size[4] Ropen tag[2] qid[13] iounit[4]
-func readRopen(r io.Reader) (qid Qid, iounit uint32, err error) {
+func readRopen(r io.Reader) (qid QID, iounit uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -595,7 +595,7 @@ func readRopen(r io.Reader) (qid Qid, iounit uint32, err error) {
     err = errUnexpectedMsg
     return
   }
-  if err = readQid(r, &qid); err != nil {
+  if err = readQID(r, &qid); err != nil {
     return
   }
   if err = readUint32(r, &iounit); err != nil {
@@ -673,7 +673,7 @@ func readTcreate(r io.Reader) (tag uint16, fid uint32, name string, perm uint32,
 }
 
 // size[4] Rcreate tag[2] qid[13] iounit[4]
-func writeRcreate(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
+func writeRcreate(w io.Writer, tag uint16, qid QID, iounit uint32) error {
   if *debugLog {
     log.Println("<-", "Rcreate", "tag:", tag, "qid:", qid, "iounit:", iounit)
   }
@@ -687,7 +687,7 @@ func writeRcreate(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQid(w, qid); err != nil {
+  if err := writeQID(w, qid); err != nil {
     return err
   }
   if err := writeUint32(w, iounit); err != nil {
@@ -697,7 +697,7 @@ func writeRcreate(w io.Writer, tag uint16, qid Qid, iounit uint32) error {
 }
 
 // size[4] Rcreate tag[2] qid[13] iounit[4]
-func readRcreate(r io.Reader) (qid Qid, iounit uint32, err error) {
+func readRcreate(r io.Reader) (qid QID, iounit uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -722,7 +722,7 @@ func readRcreate(r io.Reader) (qid Qid, iounit uint32, err error) {
     err = errUnexpectedMsg
     return
   }
-  if err = readQid(r, &qid); err != nil {
+  if err = readQID(r, &qid); err != nil {
     return
   }
   if err = readUint32(r, &iounit); err != nil {
@@ -788,7 +788,7 @@ func readTopenfd(r io.Reader) (tag uint16, fid uint32, mode uint8, err error) {
 }
 
 // size[4] Ropenfd tag[2] qid[13] iounit[4] unixfd[4]
-func writeRopenfd(w io.Writer, tag uint16, qid Qid, iounit uint32, unixfd uint32) error {
+func writeRopenfd(w io.Writer, tag uint16, qid QID, iounit uint32, unixfd uint32) error {
   if *debugLog {
     log.Println("<-", "Ropenfd", "tag:", tag, "qid:", qid, "iounit:", iounit, "unixfd:", unixfd)
   }
@@ -802,7 +802,7 @@ func writeRopenfd(w io.Writer, tag uint16, qid Qid, iounit uint32, unixfd uint32
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQid(w, qid); err != nil {
+  if err := writeQID(w, qid); err != nil {
     return err
   }
   if err := writeUint32(w, iounit); err != nil {
@@ -815,7 +815,7 @@ func writeRopenfd(w io.Writer, tag uint16, qid Qid, iounit uint32, unixfd uint32
 }
 
 // size[4] Ropenfd tag[2] qid[13] iounit[4] unixfd[4]
-func readRopenfd(r io.Reader) (qid Qid, iounit uint32, unixfd uint32, err error) {
+func readRopenfd(r io.Reader) (qid QID, iounit uint32, unixfd uint32, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -840,7 +840,7 @@ func readRopenfd(r io.Reader) (qid Qid, iounit uint32, unixfd uint32, err error)
     err = errUnexpectedMsg
     return
   }
-  if err = readQid(r, &qid); err != nil {
+  if err = readQID(r, &qid); err != nil {
     return
   }
   if err = readUint32(r, &iounit); err != nil {
@@ -1573,7 +1573,7 @@ func readTwalk(r io.Reader) (tag uint16, fid uint32, newfid uint32, nwnames []st
 }
 
 // size[4] Rwalk tag[2] nwqid*(qid[13])
-func writeRwalk(w io.Writer, tag uint16, qids []Qid) error {
+func writeRwalk(w io.Writer, tag uint16, qids []QID) error {
   if *debugLog {
     log.Println("<-", "Rwalk", "tag:", tag, "qids:", qids)
   }
@@ -1587,14 +1587,14 @@ func writeRwalk(w io.Writer, tag uint16, qids []Qid) error {
   if err := writeUint16(w, tag); err != nil {
     return err
   }
-  if err := writeQidSlice(w, qids); err != nil {
+  if err := writeQIDSlice(w, qids); err != nil {
     return err
   }
   return nil
 }
 
 // size[4] Rwalk tag[2] nwqid*(qid[13])
-func readRwalk(r io.Reader) (qids []Qid, err error) {
+func readRwalk(r io.Reader) (qids []QID, err error) {
   var size uint32
   if err = readUint32(r, &size); err != nil {
     return
@@ -1619,7 +1619,7 @@ func readRwalk(r io.Reader) (qids []Qid, err error) {
     err = errUnexpectedMsg
     return
   }
-  if err = readQidSlice(r, &qids); err != nil {
+  if err = readQIDSlice(r, &qids); err != nil {
     return
   }
   if *debugLog {
