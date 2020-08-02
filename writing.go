@@ -9,7 +9,7 @@ import (
 func writeString(w io.Writer, s string) error {
 	b := []byte(s)
 	if len(b) > 0xffff {
-		return errors.New("String too long!")
+		return errors.New("string to write is too long")
 	}
 	if e := binary.Write(w, binary.LittleEndian, int16(len(b))); e != nil {
 		return e

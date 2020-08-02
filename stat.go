@@ -5,7 +5,9 @@ import (
 	"io"
 )
 
-// TODO: Rename this to 'Dir', to be in sync with Plan9 structs.
+// TODO: Rename Stat to 'Dir', to be in sync with Plan9 structs.
+
+// Stat represents a directory entry in 9p.
 type Stat struct {
 	Type uint16 // for kernel use
 	Dev  uint32 // for kernel use

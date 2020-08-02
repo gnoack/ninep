@@ -37,7 +37,7 @@ const (
 	ModeOtherExec  = 0001
 )
 
-// Builds a "ls" style mode string for the given mode value.
+// ModeString builds a "ls" style mode string for the given mode value.
 // For example, ModeString(0744) == "-rwxr--r--".
 func ModeString(mode uint32) string {
 	b := strings.Builder{}

@@ -2,7 +2,7 @@ package ninep
 
 import "fmt"
 
-// in Plan9, defined in libc.h
+// Qid in Plan9 is defined in libc.h
 type Qid struct {
 	Path uint64 // uvlong
 	Vers uint32 // ulong
