@@ -2,6 +2,15 @@ package ninep
 
 import "testing"
 
+func TestModeStringSimple(t *testing.T) {
+	want := "-rwxr-xr-x"
+	input := uint32(0755)
+	got := ModeString(input)
+	if got != want {
+		t.Errorf("got ModeString(%#o) = %q, want %q", input, got, want)
+	}
+}
+
 func TestModeString(t *testing.T) {
 	for mode, want := range map[uint32]string{
 		ModeDir:        "d---------",
@@ -17,7 +26,7 @@ func TestModeString(t *testing.T) {
 	} {
 		got := ModeString(mode)
 		if got != want {
-			t.Errorf("bad mode string for mode 0x%x, got: %v, want: %v", mode, got, want)
+			t.Errorf("bad mode string for mode %#o, got: %v, want: %v", mode, got, want)
 		}
 	}
 }
