@@ -47,6 +47,7 @@ var msgSpecs [][]string = [][]string{
 }
 
 func printComment(ss []string) {
+	fmt.Println()
 	fmt.Print("//")
 	for _, s := range ss {
 		fmt.Print(" " + s)
@@ -97,11 +98,11 @@ func dontReturnTag(name string) bool {
 func printDebugLine(name string, ss []string) {
 	request := name[0] == 'T'
 
-	fmt.Println("  if *debugLog {")
+	fmt.Println("\tif *debugLog {")
 	if request {
-		fmt.Print("    log.Println(\"->\"")
+		fmt.Print("\t\tlog.Println(\"->\"")
 	} else {
-		fmt.Print("    log.Println(\"<-\"")
+		fmt.Print("\t\tlog.Println(\"<-\"")
 	}
 	for _, s := range ss {
 		_, n, _ := getInfo(s)
@@ -115,7 +116,7 @@ func printDebugLine(name string, ss []string) {
 		fmt.Printf(", \"%v:\", %v", n, n)
 	}
 	fmt.Println(")")
-	fmt.Println("  }")
+	fmt.Println("\t}")
 }
 
 func printReadFunc(ss []string) {
@@ -140,7 +141,7 @@ func printReadFunc(ss []string) {
 	fmt.Println("err error) {")
 
 	// Reading
-	fmt.Println("  var size uint32")
+	fmt.Println("\tvar size uint32")
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
 		funcname := fmt.Sprintf("read%v", strings.Title(t))
@@ -154,42 +155,42 @@ func printReadFunc(ss []string) {
 			funcname = "readByteSlice"
 		}
 		if s == "stat[n]" {
-			fmt.Println("  // TODO: Why is this doubly size delimited?")
-			fmt.Println("  var outerStatSize uint16")
-			fmt.Println("  if err = readUint16(r, &outerStatSize); err != nil {")
-			fmt.Println("    return")
-			fmt.Println("  }")
+			fmt.Println("\t// TODO: Why is this doubly size delimited?")
+			fmt.Println("\tvar outerStatSize uint16")
+			fmt.Println("\tif err = readUint16(r, &outerStatSize); err != nil {")
+			fmt.Println("\t\treturn")
+			fmt.Println("\t}")
 		}
 		if n == "msgType" {
-			fmt.Println("  var msgType uint8")
+			fmt.Println("\tvar msgType uint8")
 		}
 		if n == "tag" && dontReturnTag(name) {
-			fmt.Println("  var tag uint16")
+			fmt.Println("\tvar tag uint16")
 		}
-		fmt.Printf("  if err = %v(r, &%v); err != nil {\n", funcname, n)
-		fmt.Println("    return")
-		fmt.Println("  }")
+		fmt.Printf("\tif err = %v(r, &%v); err != nil {\n", funcname, n)
+		fmt.Println("\t\treturn")
+		fmt.Println("\t}")
 		if n == "tag" {
 			if name[0] == 'R' {
 				// XXX: Check whether this reads the full error message. (Unix extensions?)
-				fmt.Println("  if msgType == Rerror {")
-				fmt.Println("    var errmsg string")
-				fmt.Println("    if err = readString(r, &errmsg); err != nil {")
-				fmt.Println("      return")
-				fmt.Println("    }")
-				fmt.Println("    err = errors.New(errmsg)")
-				fmt.Println("    return")
-				fmt.Println("  }")
+				fmt.Println("\tif msgType == Rerror {")
+				fmt.Println("\t\tvar errmsg string")
+				fmt.Println("\t\tif err = readString(r, &errmsg); err != nil {")
+				fmt.Println("\t\t\treturn")
+				fmt.Println("\t\t}")
+				fmt.Println("\t\terr = errors.New(errmsg)")
+				fmt.Println("\t\treturn")
+				fmt.Println("\t}")
 			}
-			fmt.Println("  if msgType !=", name, "{")
-			fmt.Println("    err = errUnexpectedMsg")
-			fmt.Println("    return")
-			fmt.Println("  }")
+			fmt.Println("\tif msgType !=", name, "{")
+			fmt.Println("\t\terr = errUnexpectedMsg")
+			fmt.Println("\t\treturn")
+			fmt.Println("\t}")
 		}
 	}
 	printDebugLine(name, ss)
 
-	fmt.Println("  return")
+	fmt.Println("\treturn")
 	fmt.Println("}")
 }
 
@@ -226,7 +227,7 @@ func printWriteFunc(ss []string) {
 	printDebugLine(name, ss)
 
 	// Size calculation
-	fmt.Print("  size := uint32(")
+	fmt.Print("\tsize := uint32(")
 	for i, s := range ss {
 		_, _, sz := getInfo(s)
 		fmt.Print(sz)
@@ -251,11 +252,11 @@ func printWriteFunc(ss []string) {
 		if n == "msgType" {
 			n = msgType // resolve to constant directly
 		}
-		fmt.Printf("  if err := %v(w, %v); err != nil {\n", funcname, n)
-		fmt.Println("    return err")
-		fmt.Println("  }")
+		fmt.Printf("\tif err := %v(w, %v); err != nil {\n", funcname, n)
+		fmt.Println("\t\treturn err")
+		fmt.Println("\t  }")
 	}
-	fmt.Println("  return nil")
+	fmt.Println("\treturn nil")
 	fmt.Println("}")
 }
 
@@ -302,20 +303,26 @@ func main() {
 	defer f.Close()
 	os.Stdout = f
 
-	fmt.Println(`package ninep
+	if strings.HasPrefix(*prefix, "w") {
+		fmt.Println(`package ninep
 
 import (
-  "errors"
-  "io"
-  "log"
+	"io"
+	"log"
 )`)
+	} else {
+		fmt.Println(`package ninep
+
+import (
+	"errors"
+	"io"
+	"log"
+)`)
+	}
 
 	for _, ss := range msgSpecs {
 		ss = conflate(ss)
-		fmt.Println()
 		printWriteFunc(ss)
-
-		fmt.Println()
 		printReadFunc(ss)
 	}
 }
