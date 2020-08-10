@@ -18,18 +18,19 @@ type file struct {
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
+	// Truncate read to iounit size if necessary.
 	if uint32(len(p)) > f.iounit {
 		p = p[:f.iounit]
 	}
-	n, err = f.cc.Read(f.fid, f.offset, p)
+	count, err := f.cc.Read(f.fid, f.offset, p)
 	if err != nil {
 		return 0, err
 	}
-	f.offset += uint64(n) // XXX: Check bounds?
-	if n == 0 && len(p) > 0 {
+	if count == 0 && len(p) > 0 {
 		return 0, io.EOF
 	}
-	return n, nil
+	f.offset += uint64(count) // XXX: Check overflow?
+	return int(count), nil
 }
 
 func (f *file) Stat() (info os.FileInfo, err error) {

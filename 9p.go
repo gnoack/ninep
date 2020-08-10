@@ -125,7 +125,7 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 // offset indicates the offset into the file where to read
 // buf is the buffer to read into and may not be larger than
 // the fid's iounit as returned by Open().
-func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err error) {
+func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -144,8 +144,8 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err err
 		return
 	}
 
-	n = copy(buf, data)
-	return n, nil
+	count := copy(buf, data)
+	return uint32(count), nil
 
 	// TODO: Would be nice to fill the buf buffer directly instead of copying it over.
 	// n := int(r9.Uint16())
@@ -154,6 +154,23 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n int, err err
 	// 	c.err = err
 	// 	return 0, c.err
 	// }
+}
+
+func (c *clientConn) Write(fid uint32, offset uint64, data []byte) (n uint32, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTwrite(c.w, tag.tag, fid, offset, data)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	tag.await()
+
+	return readRwrite(c.r)
 }
 
 func (c *clientConn) Version(msize uint32, version string) (rmsize uint32, rversion string, err error) {
