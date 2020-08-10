@@ -59,8 +59,10 @@ func readByteSlice(r io.Reader, bs *[]byte) error {
 	if err := binary.Read(r, binary.LittleEndian, &size); err != nil {
 		return err
 	}
-	*bs = make([]byte, size)
-	if err := binary.Read(r, binary.LittleEndian, bs); err != nil {
+	if uint32(cap(*bs)) < size {
+		*bs = make([]byte, size)
+	}
+	if _, err := io.ReadFull(r, *bs); err != nil {
 		return err
 	}
 	return nil
