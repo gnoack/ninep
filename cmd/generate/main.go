@@ -1,75 +1,44 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-func must(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func collect(out chan []string) {
-	walkFunc := func(path string, info os.FileInfo, err error) error {
-		_ = info
-		if !strings.HasSuffix(path, ".9p") {
-			return nil
-		}
-
-		base := strings.TrimSuffix(filepath.Base(path), ".9p")
-		if base == "0intro" {
-			return nil
-		}
-
-		r, err := os.Open(path)
-		must(err)
-		defer r.Close()
-
-		s := bufio.NewScanner(r)
-
-		// Skip until past the SYNOPSIS header
-		for s.Scan() && strings.TrimSpace(s.Text()) != ".SH SYNOPSIS" {
-		}
-
-		var parts []string
-		for s.Scan() && !strings.HasPrefix(strings.TrimSpace(s.Text()), ".SH ") {
-			l := strings.TrimSpace(s.Text())
-			if strings.HasPrefix(l, ".ta ") || l == ".br" || l == ".PP" {
-				if len(parts) > 0 {
-					out <- parts
-					parts = nil
-				}
-				continue // new function command
-			}
-			if strings.HasPrefix(l, ".IR ") {
-				l = strings.TrimPrefix(l, ".IR ")
-				l = strings.ReplaceAll(l, " ", "")
-				parts = append(parts, l)
-				continue
-			}
-			if strings.HasPrefix(l, ".B ") {
-				l = strings.TrimPrefix(l, ".B ")
-				l = strings.ReplaceAll(l, " ", "")
-				parts = append(parts, l)
-				continue
-			}
-			must(fmt.Errorf("unrecognized line: %q", l))
-		}
-		must(s.Err())
-		if len(parts) > 0 {
-			out <- parts
-		}
-		return nil
-	}
-	defer close(out)
-	filepath.Walk("/usr/lib/plan9/man/man9", walkFunc)
+// Message specs, extracted from plan9port.
+var msgSpecs [][]string = [][]string{
+	{"size[4]", "Tauth", "tag[2]", "afid[4]", "uname[s]", "aname[s]"},
+	{"size[4]", "Rauth", "tag[2]", "aqid[13]"},
+	{"size[4]", "Tattach", "tag[2]", "fid[4]", "afid[4]", "uname[s]", "aname[s]"},
+	{"size[4]", "Rattach", "tag[2]", "qid[13]"},
+	{"size[4]", "Tclunk", "tag[2]", "fid[4]"},
+	{"size[4]", "Rclunk", "tag[2]"},
+	{"size[4]", "Rerror", "tag[2]", "ename[s]"},
+	{"size[4]", "Tflush", "tag[2]", "oldtag[2]"},
+	{"size[4]", "Rflush", "tag[2]"},
+	{"size[4]", "Topen", "tag[2]", "fid[4]", "mode[1]"},
+	{"size[4]", "Ropen", "tag[2]", "qid[13]", "iounit[4]"},
+	{"size[4]", "Tcreate", "tag[2]", "fid[4]", "name[s]", "perm[4]", "mode[1]"},
+	{"size[4]", "Rcreate", "tag[2]", "qid[13]", "iounit[4]"},
+	{"size[4]", "Topenfd", "tag[2]", "fid[4]", "mode[1]"},
+	{"size[4]", "Ropenfd", "tag[2]", "qid[13]", "iounit[4]", "unixfd[4]"},
+	{"size[4]", "Tread", "tag[2]", "fid[4]", "offset[8]", "count[4]"},
+	{"size[4]", "Rread", "tag[2]", "count[4]", "data[count]"},
+	{"size[4]", "Twrite", "tag[2]", "fid[4]", "offset[8]", "count[4]", "data[count]"},
+	{"size[4]", "Rwrite", "tag[2]", "count[4]"},
+	{"size[4]", "Tremove", "tag[2]", "fid[4]"},
+	{"size[4]", "Rremove", "tag[2]"},
+	{"size[4]", "Tstat", "tag[2]", "fid[4]"},
+	{"size[4]", "Rstat", "tag[2]", "stat[n]"},
+	{"size[4]", "Twstat", "tag[2]", "fid[4]", "stat[n]"},
+	{"size[4]", "Rwstat", "tag[2]"},
+	{"size[4]", "Tversion", "tag[2]", "msize[4]", "version[s]"},
+	{"size[4]", "Rversion", "tag[2]", "msize[4]", "version[s]"},
+	{"size[4]", "Twalk", "tag[2]", "fid[4]", "newfid[4]", "nwname[2]", "nwname*(wname[s])"},
+	{"size[4]", "Rwalk", "tag[2]", "nwqid[2]", "nwqid*(qid[13])"},
 }
 
 func printComment(ss []string) {
@@ -310,12 +279,11 @@ var outfile = flag.String("o", "/dev/stdout", "output file")
 func main() {
 	flag.Parse()
 	f, err := os.Create(*outfile)
-	must(err)
+	if err != nil {
+		log.Fatal("Create:", err)
+	}
 	defer f.Close()
 	os.Stdout = f
-
-	out := make(chan []string)
-	go collect(out)
 
 	fmt.Println(`package ninep
 
@@ -325,7 +293,7 @@ import (
   "log"
 )`)
 
-	for ss := range out {
+	for _, ss := range msgSpecs {
 		ss = conflate(ss)
 		fmt.Println()
 		printComment(ss)
