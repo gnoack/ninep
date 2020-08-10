@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+var (
+	outfile = flag.String("o", "/dev/stdout", "output file")
+	prefix  = flag.String("prefix", "", "Prefix for function names to print")
+)
+
 // Message specs, extracted from plan9port.
 var msgSpecs [][]string = [][]string{
 	{"size[4]", "Tauth", "tag[2]", "afid[4]", "uname[s]", "aname[s]"},
@@ -115,7 +120,13 @@ func printDebugLine(name string, ss []string) {
 
 func printReadFunc(ss []string) {
 	name := ss[1]
-	fmt.Print("func read" + name + "(r io.Reader) (")
+	funcname := "read" + name
+	if !strings.HasPrefix(funcname, *prefix) {
+		return
+	}
+	printComment(ss)
+
+	fmt.Print("func " + funcname + "(r io.Reader) (")
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
 		if n == "msgType" || n == "size" {
@@ -183,9 +194,17 @@ func printReadFunc(ss []string) {
 }
 
 func printWriteFunc(ss []string) {
+
 	name := ss[1]
 	var msgType string
-	fmt.Print("func write" + name + "(w io.Writer, ")
+
+	funcname := "write" + name
+	if !strings.HasPrefix(funcname, *prefix) {
+		return
+	}
+	printComment(ss)
+
+	fmt.Print("func " + funcname + "(w io.Writer, ")
 	for i, s := range ss {
 		t, n, _ := getInfo(s)
 		// msgType is fixed for each method
@@ -274,8 +293,6 @@ func conflate(in []string) []string {
 	return o
 }
 
-var outfile = flag.String("o", "/dev/stdout", "output file")
-
 func main() {
 	flag.Parse()
 	f, err := os.Create(*outfile)
@@ -296,11 +313,9 @@ import (
 	for _, ss := range msgSpecs {
 		ss = conflate(ss)
 		fmt.Println()
-		printComment(ss)
 		printWriteFunc(ss)
 
 		fmt.Println()
-		printComment(ss)
 		printReadFunc(ss)
 	}
 }
