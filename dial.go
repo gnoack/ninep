@@ -26,26 +26,26 @@ func dialNet(service string) (net.Conn, error) {
 	return net.Dial("unix", filepath.Join("/tmp", sessionDir, service))
 }
 
-func handshake(c net.Conn) error {
+func handshake(c net.Conn) (msize uint32, err error) {
 	uname, aname := "user", ""
 	wantVersion := "9P2000"
 	var wantMsize uint32 = 4000
 	rootFid := uint32(0) // TODO: Dynamically acquire FIDs somehow
 
 	if err := writeTversion(c, 0xffff, wantMsize, wantVersion); err != nil {
-		return err
+		return 0, err
 	}
 	msize, version, err := readRversion(c)
 	if err != nil {
-		return fmt.Errorf("version(%q, %q): %w", wantMsize, wantVersion, err)
+		return 0, fmt.Errorf("version(%q, %q): %w", wantMsize, wantVersion, err)
 	}
 
 	if msize < wantMsize {
 		// TODO: Fall back to server-provided msize if needed
-		return fmt.Errorf("server wanted too high msize of %v", msize)
+		return 0, fmt.Errorf("server wanted too high msize of %v", msize)
 	}
 	if version != wantVersion {
-		return fmt.Errorf("mismatching version: %q != %q", version, wantVersion)
+		return 0, fmt.Errorf("mismatching version: %q != %q", version, wantVersion)
 	}
 
 	// Afid is nofid when the client doesn't want to authenticate.
@@ -54,13 +54,13 @@ func handshake(c net.Conn) error {
 	// XXX: Authentication step
 
 	if err := writeTattach(c, 1, rootFid, afid, uname, aname); err != nil {
-		return err
+		return 0, err
 	}
 	_, err = readRattach(c)
 	if err != nil {
-		return fmt.Errorf("attach(): %w", err)
+		return 0, fmt.Errorf("attach(): %w", err)
 	}
-	return nil
+	return msize, nil
 }
 
 func DialFS(service string) (*fs, error) {
@@ -82,7 +82,8 @@ func Dial(service string) (*clientConn, error) {
 	}
 
 	// Handshake
-	if err := handshake(netConn); err != nil {
+	msize, err := handshake(netConn)
+	if err != nil {
 		netConn.Close()
 		return nil, err
 	}
@@ -93,6 +94,7 @@ func Dial(service string) (*clientConn, error) {
 		w:          netConn,
 		r:          bufio.NewReader(netConn),
 		reqReaders: make(map[uint16]callback),
+		msize:      msize,
 	}
 	go func() {
 		for i := uint16(0); i < tagCapacity; i++ {

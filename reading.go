@@ -2,7 +2,7 @@ package ninep
 
 import (
 	"encoding/binary"
-	"errors"
+	"fmt"
 	"io"
 )
 
@@ -60,7 +60,7 @@ func readByteSlice(r io.Reader, bs []byte) (size uint32, err error) {
 		return 0, err
 	}
 	if uint32(cap(bs)) < size {
-		return 0, errors.New("9p protocol: overlarge read reply")
+		return 0, fmt.Errorf("9p protocol: overlarge read reply, want: %d, got: %d", cap(bs), size)
 	}
 	bs = bs[:size]
 	if _, err := io.ReadFull(r, bs); err != nil {

@@ -77,30 +77,33 @@ func (fi *statFileInfo) Sys() interface{}   { return fi.s }
 
 type fs struct {
 	cc      *clientConn
-	nextFid uint32
-	rootFid uint32
+	nextFID uint32
+	rootFID uint32
 }
 
 func (f *fs) Open(name string) (*file, error) {
 	// TODO: Verify name format.
-	// TODO: Track used FIDs instead of just cycling.
-	f.nextFid++
-
 	components := strings.Split(name, "/")
-	_, err := f.cc.Walk(f.rootFid, f.nextFid, components)
+	if len(name) == 0 {
+		components = nil
+	}
+
+	// TODO: Track used FIDs instead of just cycling.
+	f.nextFID++
+	_, err := f.cc.Walk(f.rootFID, f.nextFID, components)
 	if err != nil {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	_, iounit, err := f.cc.Open(f.nextFid, ORead)
+	_, iounit, err := f.cc.Open(f.nextFID, ORead)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
-	// TODO: If iounit is 0, do we need to fall back to
-	// connection message size - 24?
+	// If iounit is 0, we need to fall back to connection message
+	// size - 24.
 	if iounit == 0 {
-		return nil, fmt.Errorf("9p open: iounit is 0")
+		iounit = f.cc.msize - 24
 	}
 
-	return &file{fid: f.nextFid, cc: f.cc, iounit: iounit}, nil
+	return &file{fid: f.nextFID, cc: f.cc, iounit: iounit}, nil
 }

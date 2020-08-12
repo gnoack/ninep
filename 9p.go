@@ -25,6 +25,9 @@ type clientConn struct {
 	// is read.
 	rrmux      sync.Mutex
 	reqReaders map[uint16]callback
+
+	// Connection preferences
+	msize uint32
 }
 
 // Peeks at the next available tag without reading it.
