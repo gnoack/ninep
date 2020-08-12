@@ -293,7 +293,7 @@ func readRopenfd(r io.Reader) (qid QID, iounit uint32, unixfd uint32, err error)
 }
 
 // size[4] Rread tag[2] data[count[4]]
-func readRread(r io.Reader) (data []byte, err error) {
+func readRread(r io.Reader, data []byte) (n uint32, err error) {
 	var size uint32
 	if err = readUint32(r, &size); err != nil {
 		return
@@ -318,7 +318,7 @@ func readRread(r io.Reader) (data []byte, err error) {
 		err = errUnexpectedMsg
 		return
 	}
-	if err = readByteSlice(r, &data); err != nil {
+	if n, err = readByteSlice(r, data); err != nil {
 		return
 	}
 	if *debugLog {

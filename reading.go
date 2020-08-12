@@ -2,6 +2,7 @@ package ninep
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 )
 
@@ -54,18 +55,18 @@ func readQID(r io.Reader, q *QID) error {
 	return binary.Read(r, binary.LittleEndian, q)
 }
 
-func readByteSlice(r io.Reader, bs *[]byte) error {
-	var size uint32 // 4 byte size
+func readByteSlice(r io.Reader, bs []byte) (size uint32, err error) {
 	if err := binary.Read(r, binary.LittleEndian, &size); err != nil {
-		return err
+		return 0, err
 	}
-	if uint32(cap(*bs)) < size {
-		*bs = make([]byte, size)
+	if uint32(cap(bs)) < size {
+		return 0, errors.New("9p protocol: overlarge read reply")
 	}
-	if _, err := io.ReadFull(r, *bs); err != nil {
-		return err
+	bs = bs[:size]
+	if _, err := io.ReadFull(r, bs); err != nil {
+		return 0, err
 	}
-	return nil
+	return size, nil
 }
 
 func readUint8(r io.Reader, out *uint8) error {

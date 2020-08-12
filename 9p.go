@@ -139,21 +139,7 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n uint32, err 
 
 	tag.await()
 
-	data, err := readRread(c.r)
-	if err != nil {
-		return
-	}
-
-	count := copy(buf, data)
-	return uint32(count), nil
-
-	// TODO: Would be nice to fill the buf buffer directly instead of copying it over.
-	// n := int(r9.Uint16())
-	// buf = buf[:n]
-	// if _, err := io.ReadFull(r9, buf); err != nil {
-	// 	c.err = err
-	// 	return 0, c.err
-	// }
+	return readRread(c.r, buf)
 }
 
 func (c *clientConn) Write(fid uint32, offset uint64, data []byte) (n uint32, err error) {

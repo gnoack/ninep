@@ -127,18 +127,22 @@ func printReadFunc(ss []string) {
 	}
 	printComment(ss)
 
-	fmt.Print("func " + funcname + "(r io.Reader) (")
-	for _, s := range ss {
-		t, n, _ := getInfo(s)
-		if n == "msgType" || n == "size" {
-			continue
+	if funcname == "readRread" {
+		fmt.Println("func readRread(r io.Reader, data []byte) (n uint32, err error) {")
+	} else {
+		fmt.Print("func " + funcname + "(r io.Reader) (")
+		for _, s := range ss {
+			t, n, _ := getInfo(s)
+			if n == "msgType" || n == "size" {
+				continue
+			}
+			if n == "tag" && dontReturnTag(name) {
+				continue
+			}
+			fmt.Print(n + " " + t + ", ")
 		}
-		if n == "tag" && dontReturnTag(name) {
-			continue
-		}
-		fmt.Print(n + " " + t + ", ")
+		fmt.Println("err error) {")
 	}
-	fmt.Println("err error) {")
 
 	// Reading
 	fmt.Println("\tvar size uint32")
@@ -152,7 +156,10 @@ func printReadFunc(ss []string) {
 			funcname = "readQIDSlice"
 		}
 		if t == "[]byte" {
-			funcname = "readByteSlice"
+			fmt.Printf("\tif n, err = readByteSlice(r, %v); err != nil {\n", n)
+			fmt.Println("\t\treturn")
+			fmt.Println("\t}")
+			continue
 		}
 		if s == "stat[n]" {
 			fmt.Println("\t// TODO: Why is this doubly size delimited?")
