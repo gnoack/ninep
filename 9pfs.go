@@ -39,6 +39,7 @@ func (f *file) Stat() (info os.FileInfo, err error) {
 }
 
 func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
+	// TODO: This check can be done through f.qid.
 	stat, err := f.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("stat: %w", err)
