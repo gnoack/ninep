@@ -127,9 +127,12 @@ func printReadFunc(ss []string) {
 	}
 	printComment(ss)
 
-	if funcname == "readRread" {
+	switch funcname {
+	case "readRread":
 		fmt.Println("func readRread(r io.Reader, data []byte) (n uint32, err error) {")
-	} else {
+	case "readTwrite":
+		fmt.Println("func readTwrite(r io.Reader, data []byte) (tag uint16, fid uint32, offset uint64, err error) {")
+	default:
 		fmt.Print("func " + funcname + "(r io.Reader) (")
 		for _, s := range ss {
 			t, n, _ := getInfo(s)
