@@ -55,7 +55,8 @@ func readQID(r io.Reader, q *QID) error {
 	return binary.Read(r, binary.LittleEndian, q)
 }
 
-func readByteSlice(r io.Reader, bs []byte) (size uint32, err error) {
+// Note: This *populates* a byte slice passed in from the outside.
+func readAndFillByteSlice(r io.Reader, bs []byte) (size uint32, err error) {
 	if err := binary.Read(r, binary.LittleEndian, &size); err != nil {
 		return 0, err
 	}

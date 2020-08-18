@@ -318,7 +318,7 @@ func readRread(r io.Reader, data []byte) (n uint32, err error) {
 		err = errUnexpectedMsg
 		return
 	}
-	if n, err = readByteSlice(r, data); err != nil {
+	if n, err = readAndFillByteSlice(r, data); err != nil {
 		return
 	}
 	if *debugLog {

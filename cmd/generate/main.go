@@ -151,15 +151,18 @@ func printReadFunc(ss []string) {
 	fmt.Println("\tvar size uint32")
 	for _, s := range ss {
 		t, n, _ := getInfo(s)
-		funcname := fmt.Sprintf("read%v", strings.Title(t))
+		fname := fmt.Sprintf("read%v", strings.Title(t))
 		if t == "[]string" {
-			funcname = "readStringSlice"
+			fname = "readStringSlice"
 		}
 		if t == "[]QID" {
-			funcname = "readQIDSlice"
+			fname = "readQIDSlice"
 		}
 		if t == "[]byte" {
-			fmt.Printf("\tif n, err = readByteSlice(r, %v); err != nil {\n", n)
+			if funcname != "readRread" {
+				log.Fatal("[]byte reading is only implemented for readRread right now, tried ", funcname)
+			}
+			fmt.Printf("\tif n, err = readAndFillByteSlice(r, %v); err != nil {\n", n)
 			fmt.Println("\t\treturn")
 			fmt.Println("\t}")
 			continue
@@ -177,7 +180,7 @@ func printReadFunc(ss []string) {
 		if n == "tag" && dontReturnTag(name) {
 			fmt.Println("\tvar tag uint16")
 		}
-		fmt.Printf("\tif err = %v(r, &%v); err != nil {\n", funcname, n)
+		fmt.Printf("\tif err = %v(r, &%v); err != nil {\n", fname, n)
 		fmt.Println("\t\treturn")
 		fmt.Println("\t}")
 		if n == "tag" {
