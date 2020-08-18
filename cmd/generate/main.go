@@ -100,9 +100,9 @@ func printDebugLine(name string, ss []string) {
 
 	fmt.Println("\tif *debugLog {")
 	if request {
-		fmt.Print("\t\tlog.Println(\"->\"")
-	} else {
 		fmt.Print("\t\tlog.Println(\"<-\"")
+	} else {
+		fmt.Print("\t\tlog.Println(\"->\"")
 	}
 	for _, s := range ss {
 		_, n, _ := getInfo(s)
@@ -113,7 +113,7 @@ func printDebugLine(name string, ss []string) {
 			fmt.Printf(", \"%v\"", name)
 			continue
 		}
-		fmt.Printf(", \"%v:\", %v", n, n)
+		fmt.Printf(", \"%v\", %v", n, n)
 	}
 	fmt.Println(")")
 	fmt.Println("\t}")

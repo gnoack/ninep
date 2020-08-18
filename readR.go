@@ -36,7 +36,7 @@ func readRauth(r io.Reader) (aqid QID, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rauth", "tag:", tag, "aqid:", aqid)
+		log.Println("->", "Rauth", "tag", tag, "aqid", aqid)
 	}
 	return
 }
@@ -71,7 +71,7 @@ func readRattach(r io.Reader) (qid QID, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rattach", "tag:", tag, "qid:", qid)
+		log.Println("->", "Rattach", "tag", tag, "qid", qid)
 	}
 	return
 }
@@ -103,7 +103,7 @@ func readRclunk(r io.Reader) (err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rclunk", "tag:", tag)
+		log.Println("->", "Rclunk", "tag", tag)
 	}
 	return
 }
@@ -138,7 +138,7 @@ func readRerror(r io.Reader) (ename string, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rerror", "tag:", tag, "ename:", ename)
+		log.Println("->", "Rerror", "tag", tag, "ename", ename)
 	}
 	return
 }
@@ -170,7 +170,7 @@ func readRflush(r io.Reader) (err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rflush", "tag:", tag)
+		log.Println("->", "Rflush", "tag", tag)
 	}
 	return
 }
@@ -208,7 +208,7 @@ func readRopen(r io.Reader) (qid QID, iounit uint32, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Ropen", "tag:", tag, "qid:", qid, "iounit:", iounit)
+		log.Println("->", "Ropen", "tag", tag, "qid", qid, "iounit", iounit)
 	}
 	return
 }
@@ -246,7 +246,7 @@ func readRcreate(r io.Reader) (qid QID, iounit uint32, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rcreate", "tag:", tag, "qid:", qid, "iounit:", iounit)
+		log.Println("->", "Rcreate", "tag", tag, "qid", qid, "iounit", iounit)
 	}
 	return
 }
@@ -287,7 +287,7 @@ func readRopenfd(r io.Reader) (qid QID, iounit uint32, unixfd uint32, err error)
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Ropenfd", "tag:", tag, "qid:", qid, "iounit:", iounit, "unixfd:", unixfd)
+		log.Println("->", "Ropenfd", "tag", tag, "qid", qid, "iounit", iounit, "unixfd", unixfd)
 	}
 	return
 }
@@ -322,7 +322,7 @@ func readRread(r io.Reader, data []byte) (n uint32, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rread", "tag:", tag, "data:", data)
+		log.Println("->", "Rread", "tag", tag, "data", data)
 	}
 	return
 }
@@ -357,7 +357,7 @@ func readRwrite(r io.Reader) (count uint32, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rwrite", "tag:", tag, "count:", count)
+		log.Println("->", "Rwrite", "tag", tag, "count", count)
 	}
 	return
 }
@@ -389,7 +389,7 @@ func readRremove(r io.Reader) (err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rremove", "tag:", tag)
+		log.Println("->", "Rremove", "tag", tag)
 	}
 	return
 }
@@ -429,7 +429,7 @@ func readRstat(r io.Reader) (stat Stat, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rstat", "tag:", tag, "stat:", stat)
+		log.Println("->", "Rstat", "tag", tag, "stat", stat)
 	}
 	return
 }
@@ -461,7 +461,7 @@ func readRwstat(r io.Reader) (err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rwstat", "tag:", tag)
+		log.Println("->", "Rwstat", "tag", tag)
 	}
 	return
 }
@@ -499,7 +499,7 @@ func readRversion(r io.Reader) (msize uint32, version string, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rversion", "tag:", tag, "msize:", msize, "version:", version)
+		log.Println("->", "Rversion", "tag", tag, "msize", msize, "version", version)
 	}
 	return
 }
@@ -534,7 +534,7 @@ func readRwalk(r io.Reader) (qids []QID, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("<-", "Rwalk", "tag:", tag, "qids:", qids)
+		log.Println("->", "Rwalk", "tag", tag, "qids", qids)
 	}
 	return
 }

@@ -8,7 +8,7 @@ import (
 // size[4] Tauth tag[2] afid[4] uname[s] aname[s]
 func writeTauth(w io.Writer, tag uint16, afid uint32, uname string, aname string) error {
 	if *debugLog {
-		log.Println("->", "Tauth", "tag:", tag, "afid:", afid, "uname:", uname, "aname:", aname)
+		log.Println("<-", "Tauth", "tag", tag, "afid", afid, "uname", uname, "aname", aname)
 	}
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(uname)) + (2 + len(aname)))
 	if err := writeUint32(w, size); err != nil {
@@ -35,7 +35,7 @@ func writeTauth(w io.Writer, tag uint16, afid uint32, uname string, aname string
 // size[4] Tattach tag[2] fid[4] afid[4] uname[s] aname[s]
 func writeTattach(w io.Writer, tag uint16, fid uint32, afid uint32, uname string, aname string) error {
 	if *debugLog {
-		log.Println("->", "Tattach", "tag:", tag, "fid:", fid, "afid:", afid, "uname:", uname, "aname:", aname)
+		log.Println("<-", "Tattach", "tag", tag, "fid", fid, "afid", afid, "uname", uname, "aname", aname)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 4 + (2 + len(uname)) + (2 + len(aname)))
 	if err := writeUint32(w, size); err != nil {
@@ -65,7 +65,7 @@ func writeTattach(w io.Writer, tag uint16, fid uint32, afid uint32, uname string
 // size[4] Tclunk tag[2] fid[4]
 func writeTclunk(w io.Writer, tag uint16, fid uint32) error {
 	if *debugLog {
-		log.Println("->", "Tclunk", "tag:", tag, "fid:", fid)
+		log.Println("<-", "Tclunk", "tag", tag, "fid", fid)
 	}
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
@@ -86,7 +86,7 @@ func writeTclunk(w io.Writer, tag uint16, fid uint32) error {
 // size[4] Tflush tag[2] oldtag[2]
 func writeTflush(w io.Writer, tag uint16, oldtag uint16) error {
 	if *debugLog {
-		log.Println("->", "Tflush", "tag:", tag, "oldtag:", oldtag)
+		log.Println("<-", "Tflush", "tag", tag, "oldtag", oldtag)
 	}
 	size := uint32(4 + 1 + 2 + 2)
 	if err := writeUint32(w, size); err != nil {
@@ -107,7 +107,7 @@ func writeTflush(w io.Writer, tag uint16, oldtag uint16) error {
 // size[4] Topen tag[2] fid[4] mode[1]
 func writeTopen(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 	if *debugLog {
-		log.Println("->", "Topen", "tag:", tag, "fid:", fid, "mode:", mode)
+		log.Println("<-", "Topen", "tag", tag, "fid", fid, "mode", mode)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
@@ -131,7 +131,7 @@ func writeTopen(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 // size[4] Tcreate tag[2] fid[4] name[s] perm[4] mode[1]
 func writeTcreate(w io.Writer, tag uint16, fid uint32, name string, perm uint32, mode uint8) error {
 	if *debugLog {
-		log.Println("->", "Tcreate", "tag:", tag, "fid:", fid, "name:", name, "perm:", perm, "mode:", mode)
+		log.Println("<-", "Tcreate", "tag", tag, "fid", fid, "name", name, "perm", perm, "mode", mode)
 	}
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(name)) + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
@@ -161,7 +161,7 @@ func writeTcreate(w io.Writer, tag uint16, fid uint32, name string, perm uint32,
 // size[4] Topenfd tag[2] fid[4] mode[1]
 func writeTopenfd(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 	if *debugLog {
-		log.Println("->", "Topenfd", "tag:", tag, "fid:", fid, "mode:", mode)
+		log.Println("<-", "Topenfd", "tag", tag, "fid", fid, "mode", mode)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
@@ -185,7 +185,7 @@ func writeTopenfd(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 // size[4] Tread tag[2] fid[4] offset[8] count[4]
 func writeTread(w io.Writer, tag uint16, fid uint32, offset uint64, count uint32) error {
 	if *debugLog {
-		log.Println("->", "Tread", "tag:", tag, "fid:", fid, "offset:", offset, "count:", count)
+		log.Println("<-", "Tread", "tag", tag, "fid", fid, "offset", offset, "count", count)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 8 + 4)
 	if err := writeUint32(w, size); err != nil {
@@ -212,7 +212,7 @@ func writeTread(w io.Writer, tag uint16, fid uint32, offset uint64, count uint32
 // size[4] Twrite tag[2] fid[4] offset[8] data[count[4]]
 func writeTwrite(w io.Writer, tag uint16, fid uint32, offset uint64, data []byte) error {
 	if *debugLog {
-		log.Println("->", "Twrite", "tag:", tag, "fid:", fid, "offset:", offset, "data:", data)
+		log.Println("<-", "Twrite", "tag", tag, "fid", fid, "offset", offset, "data", data)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 8 + (4 + len(data)))
 	if err := writeUint32(w, size); err != nil {
@@ -239,7 +239,7 @@ func writeTwrite(w io.Writer, tag uint16, fid uint32, offset uint64, data []byte
 // size[4] Tremove tag[2] fid[4]
 func writeTremove(w io.Writer, tag uint16, fid uint32) error {
 	if *debugLog {
-		log.Println("->", "Tremove", "tag:", tag, "fid:", fid)
+		log.Println("<-", "Tremove", "tag", tag, "fid", fid)
 	}
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
@@ -260,7 +260,7 @@ func writeTremove(w io.Writer, tag uint16, fid uint32) error {
 // size[4] Tstat tag[2] fid[4]
 func writeTstat(w io.Writer, tag uint16, fid uint32) error {
 	if *debugLog {
-		log.Println("->", "Tstat", "tag:", tag, "fid:", fid)
+		log.Println("<-", "Tstat", "tag", tag, "fid", fid)
 	}
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
@@ -281,7 +281,7 @@ func writeTstat(w io.Writer, tag uint16, fid uint32) error {
 // size[4] Twstat tag[2] fid[4] stat[n]
 func writeTwstat(w io.Writer, tag uint16, fid uint32, stat Stat) error {
 	if *debugLog {
-		log.Println("->", "Twstat", "tag:", tag, "fid:", fid, "stat:", stat)
+		log.Println("<-", "Twstat", "tag", tag, "fid", fid, "stat", stat)
 	}
 	size := uint32(4 + 1 + 2 + 4 + (39 + 8 + len(stat.Name) + len(stat.UID) + len(stat.GID) + len(stat.MUID)))
 	if err := writeUint32(w, size); err != nil {
@@ -305,7 +305,7 @@ func writeTwstat(w io.Writer, tag uint16, fid uint32, stat Stat) error {
 // size[4] Tversion tag[2] msize[4] version[s]
 func writeTversion(w io.Writer, tag uint16, msize uint32, version string) error {
 	if *debugLog {
-		log.Println("->", "Tversion", "tag:", tag, "msize:", msize, "version:", version)
+		log.Println("<-", "Tversion", "tag", tag, "msize", msize, "version", version)
 	}
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(version)))
 	if err := writeUint32(w, size); err != nil {
@@ -329,7 +329,7 @@ func writeTversion(w io.Writer, tag uint16, msize uint32, version string) error 
 // size[4] Twalk tag[2] fid[4] newfid[4] nwname*(wname[s])
 func writeTwalk(w io.Writer, tag uint16, fid uint32, newfid uint32, nwnames []string) error {
 	if *debugLog {
-		log.Println("->", "Twalk", "tag:", tag, "fid:", fid, "newfid:", newfid, "nwnames:", nwnames)
+		log.Println("<-", "Twalk", "tag", tag, "fid", fid, "newfid", newfid, "nwnames", nwnames)
 	}
 	size := uint32(4 + 1 + 2 + 4 + 4 + stringSliceSize(nwnames))
 	if err := writeUint32(w, size); err != nil {
