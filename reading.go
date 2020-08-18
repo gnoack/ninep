@@ -2,7 +2,6 @@ package ninep
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 )
 
@@ -56,18 +55,23 @@ func readQID(r io.Reader, q *QID) error {
 }
 
 // Note: This *populates* a byte slice passed in from the outside.
-func readAndFillByteSlice(r io.Reader, bs []byte) (size uint32, err error) {
+func readAndFillByteSlice(r io.Reader, bs []byte) (uint32, error) {
+	var size uint32
 	if err := binary.Read(r, binary.LittleEndian, &size); err != nil {
 		return 0, err
 	}
-	if uint32(cap(bs)) < size {
-		return 0, fmt.Errorf("9p protocol: overlarge read reply, want: %d, got: %d", cap(bs), size)
+	n := size
+	if n > uint32(len(bs)) {
+		n = uint32(len(bs))
 	}
-	bs = bs[:size]
+	bs = bs[:n]
 	if _, err := io.ReadFull(r, bs); err != nil {
 		return 0, err
 	}
-	return size, nil
+	if err := skip(r, int(size-n)); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 func readUint8(r io.Reader, out *uint8) error {
@@ -84,4 +88,24 @@ func readUint32(r io.Reader, out *uint32) error {
 
 func readUint64(r io.Reader, out *uint64) error {
 	return binary.Read(r, binary.LittleEndian, out)
+}
+
+func skip(r io.Reader, n int) error {
+	if s, ok := r.(io.ReadSeeker); ok {
+		_, err := s.Seek(int64(n), io.SeekCurrent)
+		return err
+	}
+	var buffer [1024]byte
+	buf := buffer[:]
+	for n > 0 {
+		if n < len(buf) {
+			buf = buf[:n]
+		}
+		nn, err := r.Read(buf)
+		if err != nil {
+			return err
+		}
+		n -= nn
+	}
+	return nil
 }
