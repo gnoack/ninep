@@ -11,10 +11,11 @@ import (
 )
 
 type file struct {
-	fid    uint32
+	FID    uint32
 	cc     *clientConn
 	offset uint64
 	iounit uint32
+	QID    QID
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
@@ -22,7 +23,7 @@ func (f *file) Read(p []byte) (n int, err error) {
 	if uint32(len(p)) > f.iounit {
 		p = p[:f.iounit]
 	}
-	count, err := f.cc.Read(f.fid, f.offset, p)
+	count, err := f.cc.Read(f.FID, f.offset, p)
 	if err != nil {
 		return 0, err
 	}
@@ -34,17 +35,13 @@ func (f *file) Read(p []byte) (n int, err error) {
 }
 
 func (f *file) Stat() (info os.FileInfo, err error) {
-	stat, err := f.cc.Stat(f.fid)
+	stat, err := f.cc.Stat(f.FID)
 	return &statFileInfo{s: stat}, err
 }
 
 func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
-	// TODO: This check can be done through f.qid.
-	stat, err := f.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("stat: %w", err)
-	}
-	if !stat.IsDir() {
+	fmt.Println(f.QID)
+	if !f.QID.IsDirectory() {
 		return nil, errors.New("not a directory")
 	}
 	br := bufio.NewReader(f)
@@ -63,7 +60,7 @@ func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
 }
 
 func (f *file) Close() error {
-	return f.cc.Clunk(f.fid)
+	return f.cc.Clunk(f.FID)
 }
 
 // TODO: Double check that the mode bits match.
@@ -96,7 +93,7 @@ func (f *fs) Open(name string) (*file, error) {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	_, iounit, err := f.cc.Open(f.nextFID, ORead)
+	qid, iounit, err := f.cc.Open(f.nextFID, ORead)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
@@ -106,5 +103,5 @@ func (f *fs) Open(name string) (*file, error) {
 		iounit = f.cc.msize - 24
 	}
 
-	return &file{fid: f.nextFID, cc: f.cc, iounit: iounit}, nil
+	return &file{FID: f.nextFID, cc: f.cc, iounit: iounit, QID: qid}, nil
 }
