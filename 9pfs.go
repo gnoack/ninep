@@ -40,7 +40,6 @@ func (f *file) Stat() (info os.FileInfo, err error) {
 }
 
 func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
-	fmt.Println(f.QID)
 	if !f.QID.IsDirectory() {
 		return nil, errors.New("not a directory")
 	}
