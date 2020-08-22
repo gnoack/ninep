@@ -99,8 +99,13 @@ type tagHandle struct {
 	doneReading chan struct{}
 }
 
-func (h *tagHandle) await() {
-	<-h.readyToRead
+func (h *tagHandle) await(ctx context.Context) error {
+	select {
+	case <-h.readyToRead:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (c *clientConn) acquireTag() *tagHandle {
@@ -128,7 +133,7 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 // offset indicates the offset into the file where to read
 // buf is the buffer to read into and may not be larger than
 // the fid's iounit as returned by Open().
-func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n uint32, err error) {
+func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []byte) (n uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -140,12 +145,16 @@ func (c *clientConn) Read(fid uint32, offset uint64, buf []byte) (n uint32, err 
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRread(c.r, buf)
 }
 
-func (c *clientConn) Write(fid uint32, offset uint64, data []byte) (n uint32, err error) {
+func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data []byte) (n uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -157,12 +166,16 @@ func (c *clientConn) Write(fid uint32, offset uint64, data []byte) (n uint32, er
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRwrite(c.r)
 }
 
-func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []QID, err error) {
+func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []string) (qids []QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -174,12 +187,16 @@ func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []QID, err e
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRwalk(c.r)
 }
 
-func (c *clientConn) Stat(fid uint32) (stat Stat, err error) {
+func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -191,7 +208,11 @@ func (c *clientConn) Stat(fid uint32) (stat Stat, err error) {
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRstat(c.r)
 }
@@ -207,7 +228,7 @@ const (
 	ORClose = 0x40 // delete on clunk
 )
 
-func (c *clientConn) Open(fid uint32, mode uint8) (qid QID, iounit uint32, err error) {
+func (c *clientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID, iounit uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -219,12 +240,16 @@ func (c *clientConn) Open(fid uint32, mode uint8) (qid QID, iounit uint32, err e
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRopen(c.r)
 }
 
-func (c *clientConn) Clunk(fid uint32) (err error) {
+func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -236,7 +261,30 @@ func (c *clientConn) Clunk(fid uint32) (err error) {
 		return
 	}
 
-	tag.await()
+	err = tag.await(ctx)
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
 
 	return readRclunk(c.r)
+}
+
+// TODO: Do callers need to check the error?
+func (c *clientConn) Flush(oldtag uint16) (err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTflush(c.w, tag.tag, oldtag)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	// Note: Servers must repond to flush.
+	tag.await(context.Background())
+
+	return readRflush(c.r)
 }

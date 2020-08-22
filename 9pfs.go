@@ -2,6 +2,7 @@ package ninep
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ func (f *file) Read(p []byte) (n int, err error) {
 	if uint32(len(p)) > f.iounit {
 		p = p[:f.iounit]
 	}
-	count, err := f.cc.Read(f.FID, f.offset, p)
+	count, err := f.cc.Read(context.TODO(), f.FID, f.offset, p)
 	if err != nil {
 		return 0, err
 	}
@@ -35,7 +36,7 @@ func (f *file) Read(p []byte) (n int, err error) {
 }
 
 func (f *file) Stat() (info os.FileInfo, err error) {
-	stat, err := f.cc.Stat(f.FID)
+	stat, err := f.cc.Stat(context.TODO(), f.FID)
 	return &statFileInfo{s: stat}, err
 }
 
@@ -59,7 +60,7 @@ func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
 }
 
 func (f *file) Close() error {
-	return f.cc.Clunk(f.FID)
+	return f.cc.Clunk(context.TODO(), f.FID)
 }
 
 // TODO: Double check that the mode bits match.
@@ -87,12 +88,12 @@ func (f *fs) Open(name string) (*file, error) {
 
 	// TODO: Track used FIDs instead of just cycling.
 	f.nextFID++
-	_, err := f.cc.Walk(f.rootFID, f.nextFID, components)
+	_, err := f.cc.Walk(context.TODO(), f.rootFID, f.nextFID, components)
 	if err != nil {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	qid, iounit, err := f.cc.Open(f.nextFID, ORead)
+	qid, iounit, err := f.cc.Open(context.TODO(), f.nextFID, ORead)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
