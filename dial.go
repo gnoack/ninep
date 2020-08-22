@@ -29,7 +29,7 @@ func dialNet(service string) (net.Conn, error) {
 func handshake(c net.Conn) (msize uint32, err error) {
 	uname, aname := "user", ""
 	wantVersion := "9P2000"
-	var wantMsize uint32 = 4000
+	var wantMsize uint32 = 8192
 	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
 
 	if err := writeTversion(c, 0xffff, wantMsize, wantVersion); err != nil {
