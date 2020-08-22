@@ -30,7 +30,7 @@ func handshake(c net.Conn) (msize uint32, err error) {
 	uname, aname := "user", ""
 	wantVersion := "9P2000"
 	var wantMsize uint32 = 4000
-	rootFid := uint32(0) // TODO: Dynamically acquire FIDs somehow
+	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
 
 	if err := writeTversion(c, 0xffff, wantMsize, wantVersion); err != nil {
 		return 0, err
@@ -53,7 +53,7 @@ func handshake(c net.Conn) (msize uint32, err error) {
 
 	// XXX: Authentication step
 
-	if err := writeTattach(c, 1, rootFid, afid, uname, aname); err != nil {
+	if err := writeTattach(c, 1, rootFID, afid, uname, aname); err != nil {
 		return 0, err
 	}
 	_, err = readRattach(c)
@@ -63,17 +63,33 @@ func handshake(c net.Conn) (msize uint32, err error) {
 	return msize, nil
 }
 
-func DialFS(service string) (*fs, error) {
-	cc, err := Dial(service)
+type dialOptions struct {
+	concurrency uint16
+}
+
+type dialOpt func(*dialOptions)
+
+func WithConcurrency(concurrency uint16) dialOpt {
+	return func(c *dialOptions) {
+		c.concurrency = concurrency
+	}
+}
+
+func DialFS(service string, opts ...dialOpt) (*fs, error) {
+	cc, err := Dial(service, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &fs{cc: cc}, nil
 }
 
-func Dial(service string) (*clientConn, error) {
-	// Dial options
-	tagCapacity := uint16(20) // TODO
+func Dial(service string, opts ...dialOpt) (*clientConn, error) {
+	options := dialOptions{
+		concurrency: 256,
+	}
+	for _, opt := range opts {
+		opt(&options)
+	}
 
 	// Dial
 	netConn, err := dialNet(service)
@@ -90,14 +106,14 @@ func Dial(service string) (*clientConn, error) {
 
 	// Build client connection.
 	cc := &clientConn{
-		tags:       make(chan uint16, tagCapacity),
+		tags:       make(chan uint16, options.concurrency),
 		w:          netConn,
 		r:          bufio.NewReader(netConn),
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
 	}
 	go func() {
-		for i := uint16(0); i < tagCapacity; i++ {
+		for i := uint16(0); i < options.concurrency; i++ {
 			cc.tags <- i
 		}
 	}()
