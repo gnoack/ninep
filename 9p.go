@@ -162,57 +162,6 @@ func (c *clientConn) Write(fid uint32, offset uint64, data []byte) (n uint32, er
 	return readRwrite(c.r)
 }
 
-func (c *clientConn) Version(msize uint32, version string) (rmsize uint32, rversion string, err error) {
-	tag := c.acquireTag()
-	defer c.releaseTag(tag)
-
-	c.wmux.Lock()
-	err = writeTversion(c.w, tag.tag, msize, version)
-	c.wmux.Unlock()
-
-	if err != nil {
-		return
-	}
-
-	tag.await()
-
-	return readRversion(c.r)
-}
-
-func (c *clientConn) Auth(afid uint32, uname string, aname string) (qid QID, err error) {
-	tag := c.acquireTag()
-	defer c.releaseTag(tag)
-
-	c.wmux.Lock()
-	err = writeTauth(c.w, tag.tag, afid, uname, aname)
-	c.wmux.Unlock()
-
-	if err != nil {
-		return
-	}
-
-	tag.await()
-
-	return readRauth(c.r)
-}
-
-func (c *clientConn) Attach(fid, afid uint32, uname, aname string) (qid QID, err error) {
-	tag := c.acquireTag()
-	defer c.releaseTag(tag)
-
-	c.wmux.Lock()
-	err = writeTattach(c.w, tag.tag, fid, afid, uname, aname)
-	c.wmux.Unlock()
-
-	if err != nil {
-		return
-	}
-
-	tag.await()
-
-	return readRattach(c.r)
-}
-
 func (c *clientConn) Walk(fid, newfid uint32, wname []string) (qids []QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
