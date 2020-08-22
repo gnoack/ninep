@@ -267,7 +267,7 @@ func printWriteFunc(ss []string) {
 		}
 		fmt.Printf("\tif err := %v(w, %v); err != nil {\n", funcname, n)
 		fmt.Println("\t\treturn err")
-		fmt.Println("\t  }")
+		fmt.Println("\t}")
 	}
 	fmt.Println("\treturn nil")
 	fmt.Println("}")

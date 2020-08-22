@@ -13,22 +13,22 @@ func writeTauth(w io.Writer, tag uint16, afid uint32, uname string, aname string
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(uname)) + (2 + len(aname)))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tauth); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, afid); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, uname); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, aname); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -40,25 +40,25 @@ func writeTattach(w io.Writer, tag uint16, fid uint32, afid uint32, uname string
 	size := uint32(4 + 1 + 2 + 4 + 4 + (2 + len(uname)) + (2 + len(aname)))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tattach); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, afid); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, uname); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, aname); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -70,16 +70,16 @@ func writeTclunk(w io.Writer, tag uint16, fid uint32) error {
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tclunk); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -91,16 +91,16 @@ func writeTflush(w io.Writer, tag uint16, oldtag uint16) error {
 	size := uint32(4 + 1 + 2 + 2)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tflush); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, oldtag); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -112,19 +112,19 @@ func writeTopen(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 	size := uint32(4 + 1 + 2 + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Topen); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, mode); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -136,25 +136,25 @@ func writeTcreate(w io.Writer, tag uint16, fid uint32, name string, perm uint32,
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(name)) + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tcreate); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, name); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, perm); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, mode); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -166,19 +166,19 @@ func writeTopenfd(w io.Writer, tag uint16, fid uint32, mode uint8) error {
 	size := uint32(4 + 1 + 2 + 4 + 1)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Topenfd); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, mode); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -190,22 +190,22 @@ func writeTread(w io.Writer, tag uint16, fid uint32, offset uint64, count uint32
 	size := uint32(4 + 1 + 2 + 4 + 8 + 4)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tread); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint64(w, offset); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, count); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -217,22 +217,22 @@ func writeTwrite(w io.Writer, tag uint16, fid uint32, offset uint64, data []byte
 	size := uint32(4 + 1 + 2 + 4 + 8 + (4 + len(data)))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Twrite); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint64(w, offset); err != nil {
 		return err
-	  }
+	}
 	if err := writeByteSlice(w, data); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -244,16 +244,16 @@ func writeTremove(w io.Writer, tag uint16, fid uint32) error {
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tremove); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -265,16 +265,16 @@ func writeTstat(w io.Writer, tag uint16, fid uint32) error {
 	size := uint32(4 + 1 + 2 + 4)
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tstat); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -286,19 +286,19 @@ func writeTwstat(w io.Writer, tag uint16, fid uint32, stat Stat) error {
 	size := uint32(4 + 1 + 2 + 4 + (39 + 8 + len(stat.Name) + len(stat.UID) + len(stat.GID) + len(stat.MUID)))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Twstat); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeStat(w, stat); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -310,19 +310,19 @@ func writeTversion(w io.Writer, tag uint16, msize uint32, version string) error 
 	size := uint32(4 + 1 + 2 + 4 + (2 + len(version)))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Tversion); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, msize); err != nil {
 		return err
-	  }
+	}
 	if err := writeString(w, version); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
 
@@ -334,21 +334,21 @@ func writeTwalk(w io.Writer, tag uint16, fid uint32, newfid uint32, nwnames []st
 	size := uint32(4 + 1 + 2 + 4 + 4 + stringSliceSize(nwnames))
 	if err := writeUint32(w, size); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint8(w, Twalk); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint16(w, tag); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, fid); err != nil {
 		return err
-	  }
+	}
 	if err := writeUint32(w, newfid); err != nil {
 		return err
-	  }
+	}
 	if err := writeStringSlice(w, nwnames); err != nil {
 		return err
-	  }
+	}
 	return nil
 }
