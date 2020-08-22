@@ -1,7 +1,6 @@
 package ninep
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -108,7 +107,7 @@ func Dial(service string, opts ...dialOpt) (*clientConn, error) {
 	cc := &clientConn{
 		tags:       make(chan uint16, options.concurrency),
 		w:          netConn,
-		r:          bufio.NewReader(netConn),
+		r:          netConn,
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
 	}

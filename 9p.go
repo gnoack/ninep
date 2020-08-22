@@ -1,7 +1,7 @@
 package ninep
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -9,7 +9,28 @@ import (
 	"sync"
 )
 
-type callback func()
+type msgHeader struct {
+	size    uint32
+	msgType uint8
+	tag     uint16
+}
+
+func (h *msgHeader) serialize() (out [7]byte) {
+	enc := binary.LittleEndian
+	enc.PutUint32(out[0:4], h.size)
+	out[4] = byte(h.msgType)
+	enc.PutUint16(out[5:7], h.tag)
+	return out
+}
+
+func (h *msgHeader) readerFrom(r io.Reader) io.Reader {
+	hdrBuf := h.serialize()
+	hdrReader := bytes.NewBuffer(hdrBuf[:])
+	bodyReader := io.LimitReader(r, int64(h.size-7))
+	return io.MultiReader(hdrReader, bodyReader)
+}
+
+type callback func(d msgHeader)
 
 // TODO(gnoack): Need a way to close these.
 // clientConn represents a connection to a 9p server.
@@ -19,7 +40,7 @@ type clientConn struct {
 	wmux sync.Mutex
 	w    io.Writer
 
-	r *bufio.Reader
+	r io.Reader
 
 	// Callbacks that get called when a message for the given tag
 	// is read.
@@ -30,25 +51,30 @@ type clientConn struct {
 	msize uint32
 }
 
-// Peeks at the next available tag without reading it.
-func peekTag(r *bufio.Reader) (uint16, error) {
-	buf, err := r.Peek(4 + 1 + 2)
+func readHeader(r io.Reader) (hdr msgHeader, err error) {
+	var buf [7]byte
+	_, err = io.ReadFull(r, buf[:])
 	if err != nil {
-		return 0, err
+		return
 	}
-	return binary.LittleEndian.Uint16(buf[5:7]), nil
+	return msgHeader{
+		size:    binary.LittleEndian.Uint32(buf[0:4]),
+		msgType: uint8(buf[4]),
+		tag:     binary.LittleEndian.Uint16(buf[5:7]),
+	}, nil
 }
 
 // Runs the background reader goroutine which dispatches requests.
 func (c *clientConn) Run(ctx context.Context) error {
-	// TODO: Context cancellation.
+	// TODO: Context cancelation.
 	for {
-		tag, err := peekTag(c.r)
+		hdr, err := readHeader(c.r)
+		// TODO: Use limit reader
 		if err != nil {
 			return fmt.Errorf("peek error when expecting next message: %w", err)
 		}
 
-		c.getReqReader(tag)() // blocking
+		c.getReqReader(hdr.tag)(hdr) // blocking
 	}
 }
 
@@ -59,15 +85,11 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 	rr, ok := c.reqReaders[tag]
 	if !ok {
 		// Skip message and log, nothing is registered for the tag.
-		return func() {
+		return func(hdr msgHeader) {
 			// TODO: handle errors correctly
-			var size uint32
-			if err := readUint32(c.r, &size); err != nil {
-				return
-			}
-			buf := make([]byte, size-4)
+			buf := make([]byte, hdr.size-7)
 			n, err := c.r.Read(buf)
-			if err != nil || n < int(size-4) {
+			if err != nil || n < int(hdr.size-7) {
 				return
 			}
 		}
@@ -93,30 +115,44 @@ func (c *clientConn) clearReqReader(tag uint16) {
 type tagHandle struct {
 	tag uint16
 	// Reader Run loop sends a msg header for that tag if found.
-	readyToRead chan struct{}
+	readyToRead chan msgHeader
 	// The handling function replies back to the reader run loop
 	// through this channel.
 	doneReading chan struct{}
+	// Parent clientConn
+	conn *clientConn
 }
 
-func (h *tagHandle) await(ctx context.Context) error {
+func (h *tagHandle) awaitHdr(ctx context.Context) (msgHeader, error) {
 	select {
-	case <-h.readyToRead:
-		return nil
+	case hdr := <-h.readyToRead:
+		return hdr, nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return msgHeader{}, ctx.Err()
 	}
+}
+
+// Await the response for the given tag. On success, returns a reader
+// for the response message (bounded to size). Returns ctx.Err() on
+// early cancelation.
+func (h *tagHandle) await(ctx context.Context) (io.Reader, error) {
+	hdr, err := h.awaitHdr(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return hdr.readerFrom(h.conn.r), nil
 }
 
 func (c *clientConn) acquireTag() *tagHandle {
 	h := &tagHandle{
+		conn:        c,
 		tag:         <-c.tags,
-		readyToRead: make(chan struct{}),
+		readyToRead: make(chan msgHeader),
 		doneReading: make(chan struct{}),
 	}
-	c.setReqReader(h.tag, func() {
+	c.setReqReader(h.tag, func(hdr msgHeader) {
 		// Invoked by reader run loop to read the given message.
-		h.readyToRead <- struct{}{}
+		h.readyToRead <- hdr
 		<-h.doneReading
 	})
 	return h
@@ -145,13 +181,13 @@ func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRread(c.r, buf)
+	return readRread(r, buf)
 }
 
 func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data []byte) (n uint32, err error) {
@@ -166,13 +202,13 @@ func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data 
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRwrite(c.r)
+	return readRwrite(r)
 }
 
 func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []string) (qids []QID, err error) {
@@ -187,13 +223,13 @@ func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []strin
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRwalk(c.r)
+	return readRwalk(r)
 }
 
 func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error) {
@@ -208,13 +244,13 @@ func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRstat(c.r)
+	return readRstat(r)
 }
 
 // The following modes are defined in open(9p) and can be used for
@@ -240,13 +276,13 @@ func (c *clientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID,
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRopen(c.r)
+	return readRopen(r)
 }
 
 func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
@@ -261,13 +297,13 @@ func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
 		return
 	}
 
-	err = tag.await(ctx)
+	r, err := tag.await(ctx)
 	if err != nil {
 		c.Flush(tag.tag)
 		return
 	}
 
-	return readRclunk(c.r)
+	return readRclunk(r)
 }
 
 // TODO: Do callers need to check the error?
@@ -284,7 +320,7 @@ func (c *clientConn) Flush(oldtag uint16) (err error) {
 	}
 
 	// Note: Servers must repond to flush.
-	tag.await(context.Background())
+	r, _ := tag.await(context.Background())
 
-	return readRflush(c.r)
+	return readRflush(r)
 }
