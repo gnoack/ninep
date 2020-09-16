@@ -39,6 +39,9 @@ func formatStat(stat os.FileInfo) string {
 }
 
 func main() {
+	// For better RPC latency debugging, log microseconds.
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
 	flag.Usage = usage
 	flag.Parse()
 	cmd, service, path := parsePositionalArgs()
