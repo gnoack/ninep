@@ -113,6 +113,10 @@ func printDebugLine(name string, ss []string) {
 			fmt.Printf(", \"%v\"", name)
 			continue
 		}
+		if n == "data" && name == "Rread" {
+			fmt.Print(", \"data\", data[:n]")
+			continue
+		}
 		fmt.Printf(", \"%v\", %v", n, n)
 	}
 	fmt.Println(")")

@@ -322,7 +322,7 @@ func readRread(r io.Reader, data []byte) (n uint32, err error) {
 		return
 	}
 	if *debugLog {
-		log.Println("->", "Rread", "tag", tag, "data", data)
+		log.Println("->", "Rread", "tag", tag, "data", data[:n])
 	}
 	return
 }
