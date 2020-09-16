@@ -39,8 +39,7 @@ func handshake(c net.Conn) (msize uint32, err error) {
 		return 0, fmt.Errorf("version(%q, %q): %w", wantMsize, wantVersion, err)
 	}
 
-	if msize < wantMsize {
-		// TODO: Fall back to server-provided msize if needed
+	if wantMsize < msize {
 		return 0, fmt.Errorf("server wanted too high msize of %v", msize)
 	}
 	if version != wantVersion {
