@@ -37,14 +37,11 @@ type callback func(d msgHeader)
 type clientConn struct {
 	tags chan uint16
 
-	wmux sync.Mutex
-	w    io.Writer
+	wmux sync.Mutex // Write mutex.
+	conn io.ReadWriteCloser
 
-	r io.Reader
-
-	// Callbacks that get called when a message for the given tag
-	// is read.
-	rrmux      sync.Mutex
+	// Callbacks that get called when a message for the given tag is read.
+	rrmux      sync.Mutex // Mutex for reqReaders.
 	reqReaders map[uint16]callback
 
 	// Connection preferences
@@ -68,7 +65,7 @@ func readHeader(r io.Reader) (hdr msgHeader, err error) {
 func (c *clientConn) Run(ctx context.Context) error {
 	// TODO: Context cancelation.
 	for {
-		hdr, err := readHeader(c.r)
+		hdr, err := readHeader(c.conn)
 		// TODO: Use limit reader
 		if err != nil {
 			return fmt.Errorf("peek error when expecting next message: %w", err)
@@ -88,7 +85,7 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 		return func(hdr msgHeader) {
 			// TODO: handle errors correctly
 			buf := make([]byte, hdr.size-7)
-			n, err := c.r.Read(buf)
+			n, err := c.conn.Read(buf)
 			if err != nil || n < int(hdr.size-7) {
 				return
 			}
@@ -140,7 +137,7 @@ func (h *tagHandle) await(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hdr.readerFrom(h.conn.r), nil
+	return hdr.readerFrom(h.conn.conn), nil
 }
 
 func (c *clientConn) acquireTag() *tagHandle {
@@ -174,7 +171,7 @@ func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTread(c.w, tag.tag, fid, offset, uint32(len(buf)))
+	err = writeTread(c.conn, tag.tag, fid, offset, uint32(len(buf)))
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -195,7 +192,7 @@ func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data 
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTwrite(c.w, tag.tag, fid, offset, data)
+	err = writeTwrite(c.conn, tag.tag, fid, offset, data)
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -216,7 +213,7 @@ func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []strin
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTwalk(c.w, tag.tag, fid, newfid, wname)
+	err = writeTwalk(c.conn, tag.tag, fid, newfid, wname)
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -237,7 +234,7 @@ func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTstat(c.w, tag.tag, fid)
+	err = writeTstat(c.conn, tag.tag, fid)
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -269,7 +266,7 @@ func (c *clientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID,
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTopen(c.w, tag.tag, fid, mode)
+	err = writeTopen(c.conn, tag.tag, fid, mode)
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -290,7 +287,7 @@ func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTclunk(c.w, tag.tag, fid)
+	err = writeTclunk(c.conn, tag.tag, fid)
 	c.wmux.Unlock()
 
 	if err != nil {
@@ -312,7 +309,7 @@ func (c *clientConn) Flush(oldtag uint16) (err error) {
 	defer c.releaseTag(tag)
 
 	c.wmux.Lock()
-	err = writeTflush(c.w, tag.tag, oldtag)
+	err = writeTflush(c.conn, tag.tag, oldtag)
 	c.wmux.Unlock()
 
 	if err != nil {

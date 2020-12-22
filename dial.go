@@ -105,8 +105,7 @@ func Dial(service string, opts ...dialOpt) (*clientConn, error) {
 	// Build client connection.
 	cc := &clientConn{
 		tags:       make(chan uint16, options.concurrency),
-		w:          netConn,
-		r:          netConn,
+		conn:       netConn,
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
 	}
