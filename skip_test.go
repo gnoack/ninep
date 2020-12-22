@@ -31,6 +31,8 @@ type forwardReader struct {
 
 func TestSkipLongWithoutSeek(t *testing.T) {
 	s := strings.NewReader(repeat("x", 5000))
+	// Wrap it in forwardReader, so we're sure we don't
+	// accidentally expose more than io.Reader.
 	r := forwardReader{s}
 
 	if err := skip(r, 3000); err != nil {
