@@ -46,9 +46,9 @@ func main() {
 	flag.Parse()
 	cmd, service, path := parsePositionalArgs()
 
-	c, err := ninep.DialFS(service)
+	c, err := ninep.Dial(service)
 	if err != nil {
-		log.Fatalf("DialFS(%q): %v", service, err)
+		log.Fatalf("Dial(%q): %v", service, err)
 	}
 
 	r, err := c.Open(path)

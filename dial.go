@@ -77,7 +77,7 @@ func WithConcurrency(concurrency uint16) dialOpt {
 	}
 }
 
-func DialFS(service string, opts ...dialOpt) (*FS, error) {
+func Dial(service string, opts ...dialOpt) (*FS, error) {
 	cc, err := dial9pConn(service, opts...)
 	if err != nil {
 		return nil, err
