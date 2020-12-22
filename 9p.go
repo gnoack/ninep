@@ -63,8 +63,15 @@ func readHeader(r io.Reader) (hdr msgHeader, err error) {
 
 // run runs the background reader goroutine which dispatches requests.
 func (c *clientConn) run(ctx context.Context) error {
-	// TODO: Context cancelation.
+	// TODO: The context cancelation here is poor. We should be
+	// able to return immediately, not only after reading the next
+	// message header.
 	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
 		hdr, err := readHeader(c.conn)
 		// TODO: Use limit reader
 		if err != nil {
