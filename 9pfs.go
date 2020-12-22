@@ -73,13 +73,13 @@ func (fi *statFileInfo) ModTime() time.Time { return time.Unix(int64(fi.s.Mtime)
 func (fi *statFileInfo) IsDir() bool        { return (fi.s.Mode & ModeDir) != 0 }
 func (fi *statFileInfo) Sys() interface{}   { return fi.s }
 
-type fs struct {
+type FS struct {
 	cc      *clientConn
 	nextFID uint32
 	rootFID uint32
 }
 
-func (f *fs) Open(name string) (*file, error) {
+func (f *FS) Open(name string) (*file, error) {
 	// TODO: Verify name format.
 	components := strings.Split(name, "/")
 	if len(name) == 0 {
