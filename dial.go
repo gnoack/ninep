@@ -78,14 +78,15 @@ func WithConcurrency(concurrency uint16) dialOpt {
 }
 
 func DialFS(service string, opts ...dialOpt) (*FS, error) {
-	cc, err := Dial(service, opts...)
+	cc, err := dial9pConn(service, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &FS{cc: cc}, nil
 }
 
-func Dial(service string, opts ...dialOpt) (*clientConn, error) {
+// dial9pConn establishes a 9p client connection and returns it.
+func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
 	options := dialOptions{
 		concurrency: 256,
 	}
