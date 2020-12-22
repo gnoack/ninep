@@ -10,9 +10,13 @@ import (
 	"strings"
 )
 
-// Nofid is the fid value used to indicate absence of a FID,
+// nofid is the fid value used to indicate absence of a FID,
 // e.g. to pass as afid when no authentication is required.
-const Nofid uint32 = ^uint32(0)
+const nofid uint32 = ^uint32(0)
+
+// notag is the tag value used in absence of a tag,
+// e.g. during authentication
+const notag uint16 = ^uint16(0)
 
 func dialNet(service string) (net.Conn, error) {
 	if service == "sources" {
@@ -31,7 +35,7 @@ func handshake(c net.Conn) (msize uint32, err error) {
 	var wantMsize uint32 = 8192
 	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
 
-	if err := writeTversion(c, 0xffff, wantMsize, wantVersion); err != nil {
+	if err := writeTversion(c, notag, wantMsize, wantVersion); err != nil {
 		return 0, err
 	}
 	msize, version, err := readRversion(c)
@@ -47,7 +51,7 @@ func handshake(c net.Conn) (msize uint32, err error) {
 	}
 
 	// Afid is nofid when the client doesn't want to authenticate.
-	afid := Nofid
+	afid := nofid
 
 	// XXX: Authentication step
 
