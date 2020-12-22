@@ -61,8 +61,8 @@ func readHeader(r io.Reader) (hdr msgHeader, err error) {
 	}, nil
 }
 
-// Runs the background reader goroutine which dispatches requests.
-func (c *clientConn) Run(ctx context.Context) error {
+// run runs the background reader goroutine which dispatches requests.
+func (c *clientConn) run(ctx context.Context) error {
 	// TODO: Context cancelation.
 	for {
 		hdr, err := readHeader(c.conn)
@@ -111,7 +111,7 @@ func (c *clientConn) clearReqReader(tag uint16) {
 
 type tagHandle struct {
 	tag uint16
-	// Reader Run loop sends a msg header for that tag if found.
+	// Reader run loop sends a msg header for that tag if found.
 	readyToRead chan msgHeader
 	// The handling function replies back to the reader run loop
 	// through this channel.

@@ -116,10 +116,10 @@ func Dial(service string, opts ...dialOpt) (*clientConn, error) {
 	}()
 
 	go func() {
-		err := cc.Run(context.Background()) // TODO: Cancellation
+		err := cc.run(context.Background()) // TODO: Cancelation
 		if err != nil {
 			// TODO: How to report error correctly?
-			log.Fatalf("9p client: Run(): %v", err)
+			log.Fatalf("9p client: run(): %v", err)
 		}
 	}()
 
