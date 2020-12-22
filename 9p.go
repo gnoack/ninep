@@ -84,9 +84,8 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 		// Skip message and log, nothing is registered for the tag.
 		return func(hdr msgHeader) {
 			// TODO: handle errors correctly
-			buf := make([]byte, hdr.size-7)
-			n, err := c.conn.Read(buf)
-			if err != nil || n < int(hdr.size-7) {
+			err := skip(c.conn, int(hdr.size-7))
+			if err != nil {
 				return
 			}
 		}
