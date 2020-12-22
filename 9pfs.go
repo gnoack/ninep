@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ func (f *file) Stat() (info os.FileInfo, err error) {
 	return &statFileInfo{s: stat}, err
 }
 
-func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
+func (f *file) ReadDir(n int) (entries []fs.DirEntry, err error) {
 	if !f.QID.IsDirectory() {
 		return nil, errors.New("not a directory")
 	}
@@ -52,11 +53,11 @@ func (f *file) ReadDir(n int) (infos []os.FileInfo, err error) {
 			if unlimited && err == io.EOF {
 				err = nil
 			}
-			return infos, err
+			return entries, err
 		}
-		infos = append(infos, &statFileInfo{s: stat})
+		entries = append(entries, &statFileInfo{s: stat})
 	}
-	return infos, nil
+	return entries, nil
 }
 
 func (f *file) Close() error {
@@ -66,12 +67,14 @@ func (f *file) Close() error {
 // TODO: Double check that the mode bits match.
 type statFileInfo struct{ s Stat }
 
-func (fi *statFileInfo) Name() string       { return fi.s.Name }
-func (fi *statFileInfo) Size() int64        { return int64(fi.s.Length) }
-func (fi *statFileInfo) Mode() os.FileMode  { return os.FileMode(fi.s.Mode) }
-func (fi *statFileInfo) ModTime() time.Time { return time.Unix(int64(fi.s.Mtime), 0) }
-func (fi *statFileInfo) IsDir() bool        { return (fi.s.Mode & ModeDir) != 0 }
-func (fi *statFileInfo) Sys() interface{}   { return fi.s }
+func (fi *statFileInfo) Name() string               { return fi.s.Name }
+func (fi *statFileInfo) Size() int64                { return int64(fi.s.Length) }
+func (fi *statFileInfo) Mode() fs.FileMode          { return os.FileMode(fi.s.Mode) }
+func (fi *statFileInfo) ModTime() time.Time         { return time.Unix(int64(fi.s.Mtime), 0) }
+func (fi *statFileInfo) IsDir() bool                { return (fi.s.Mode & ModeDir) != 0 }
+func (fi *statFileInfo) Sys() interface{}           { return fi.s }
+func (fi *statFileInfo) Type() fs.FileMode          { return fi.Mode().Type() }
+func (fi *statFileInfo) Info() (fs.FileInfo, error) { return fi, nil }
 
 type FS struct {
 	cc      *clientConn
@@ -80,7 +83,7 @@ type FS struct {
 }
 
 // Open opens a file for reading.
-func (f *FS) Open(name string) (*file, error) {
+func (f *FS) Open(name string) (fs.File, error) {
 	// TODO: Verify name format.
 	components := strings.Split(name, "/")
 	if len(name) == 0 {
@@ -106,3 +109,5 @@ func (f *FS) Open(name string) (*file, error) {
 
 	return &file{FID: f.nextFID, cc: f.cc, iounit: iounit, QID: qid}, nil
 }
+
+var _ fs.FS = (*FS)(nil)

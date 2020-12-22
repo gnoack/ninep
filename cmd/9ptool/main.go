@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -32,7 +33,7 @@ func parsePositionalArgs() (cmd string, service string, path string) {
 	return
 }
 
-func formatStat(stat os.FileInfo) string {
+func formatStat(stat fs.FileInfo) string {
 	sys := stat.Sys().(ninep.Stat)
 	return fmt.Sprintf("%s %8d %8s %8s %s",
 		stat.Mode().String(), stat.Size(), sys.UID, sys.GID, stat.Name())
@@ -46,19 +47,18 @@ func main() {
 	flag.Parse()
 	cmd, service, path := parsePositionalArgs()
 
-	c, err := ninep.Dial(service)
+	fsys, err := ninep.Dial(service)
 	if err != nil {
 		log.Fatalf("Dial(%q): %v", service, err)
 	}
 
-	r, err := c.Open(path)
-	if err != nil {
-		log.Fatalf("Open: %v", err)
-	}
-	defer r.Close()
-
 	switch cmd {
 	case "cat":
+		r, err := fsys.Open(path)
+		if err != nil {
+			log.Fatalf("Open: %v", err)
+		}
+		defer r.Close()
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
 			log.Fatalf("Read: %v", err)
@@ -66,18 +66,22 @@ func main() {
 		os.Stdout.Write(buf)
 
 	case "stat":
-		stat, err := r.Stat()
+		stat, err := fs.Stat(fsys, path)
 		if err != nil {
 			log.Fatalf("Stat: %v", err)
 		}
 		fmt.Println(formatStat(stat))
 
 	case "ls":
-		infos, err := r.ReadDir(0)
+		entries, err := fs.ReadDir(fsys, path)
 		if err != nil {
 			log.Fatalf("ReadDir: %v", err)
 		}
-		for _, info := range infos {
+		for _, e := range entries {
+			info, err := e.Info()
+			if err != nil {
+				log.Fatalf("Info(): %v", err)
+			}
 			fmt.Println(formatStat(info))
 		}
 	}
