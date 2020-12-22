@@ -257,8 +257,7 @@ func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error
 	return readRstat(r)
 }
 
-// The following modes are defined in open(9p) and can be used for
-// opening and creating files:
+// Modes for opening and creating files, as defined in open(9p).
 const (
 	ORead   = 0x0
 	OWrite  = 0x1

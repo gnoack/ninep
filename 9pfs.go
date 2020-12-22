@@ -79,6 +79,7 @@ type FS struct {
 	rootFID uint32
 }
 
+// Open opens a file for reading.
 func (f *FS) Open(name string) (*file, error) {
 	// TODO: Verify name format.
 	components := strings.Split(name, "/")
