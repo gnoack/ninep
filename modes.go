@@ -4,8 +4,7 @@ import (
 	"strings"
 )
 
-// The following mode flags are part of the Stat struct and used for
-// file meta-information:
+// 9p Stat mode flags for file meta-information.
 const (
 	ModeDir    = 0x80000000
 	ModeAppend = 0x40000000
@@ -15,7 +14,7 @@ const (
 	ModeTmp    = 0x04000000
 )
 
-// The following Unixy flags are presumably 9P2000.u extensions.
+// 9P2000.u extensions to 9p Stat mode flags.
 const (
 	ModeUnixDev   = 0x00800000
 	ModeSymlink   = 0x00400000
@@ -24,7 +23,7 @@ const (
 )
 
 // The read, write and execute bits are stored in the three least
-// significant octets of Stat.Mode, for user, group and others:
+// significant octets of Stat.Mode, for user, group and others.
 const (
 	ModeUserRead   = 0400
 	ModeUserWrite  = 0200
