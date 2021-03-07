@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
