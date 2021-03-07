@@ -59,7 +59,7 @@ func main() {
 			log.Fatalf("Open: %v", err)
 		}
 		defer r.Close()
-		buf, err := ioutil.ReadAll(r)
+		buf, err := io.ReadAll(r)
 		if err != nil {
 			log.Fatalf("Read: %v", err)
 		}
