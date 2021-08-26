@@ -60,6 +60,31 @@ func (f *file) ReadDir(n int) (entries []fs.DirEntry, err error) {
 	return entries, nil
 }
 
+func (f *file) Seek(offset int64, whence int) (int64, error) {
+	var absOffset int64
+
+	switch whence {
+	case io.SeekStart:
+		absOffset = offset
+	case io.SeekCurrent:
+		absOffset = int64(f.offset) + offset
+	case io.SeekEnd:
+		stat, err := f.Stat()
+		if err != nil {
+			return int64(f.offset), err
+		}
+		absOffset = stat.Size() + offset
+	default:
+		return int64(f.offset), fs.ErrInvalid
+	}
+
+	if absOffset < 0 {
+		return int64(f.offset), fs.ErrInvalid
+	}
+	f.offset = uint64(absOffset)
+	return int64(f.offset), nil
+}
+
 func (f *file) Close() error {
 	return f.cc.Clunk(context.TODO(), f.FID)
 }
