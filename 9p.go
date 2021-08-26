@@ -170,7 +170,7 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 
 // Read from an open fid.
 //
-// offset indicates the offset into the file where to read
+// offset indicates the offset into the file where to read.
 // buf is the buffer to read into and may not be larger than
 // the fid's iounit as returned by Open().
 func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []byte) (n uint32, err error) {
