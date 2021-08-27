@@ -15,14 +15,14 @@ import (
 type file struct {
 	FID    uint32
 	cc     *clientConn
-	offset uint64
+	offset int64
 	iounit uint32
 	QID    QID
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
-	n, err = f.ReadAt(p, int64(f.offset))
-	f.offset += uint64(n)
+	n, err = f.ReadAt(p, f.offset)
+	f.offset += int64(n)
 	return n, err
 }
 
@@ -72,22 +72,22 @@ func (f *file) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekStart:
 		absOffset = offset
 	case io.SeekCurrent:
-		absOffset = int64(f.offset) + offset
+		absOffset = f.offset + offset
 	case io.SeekEnd:
 		stat, err := f.Stat()
 		if err != nil {
-			return int64(f.offset), err
+			return f.offset, err
 		}
 		absOffset = stat.Size() + offset
 	default:
-		return int64(f.offset), fs.ErrInvalid
+		return f.offset, fs.ErrInvalid
 	}
 
 	if absOffset < 0 {
-		return int64(f.offset), fs.ErrInvalid
+		return f.offset, fs.ErrInvalid
 	}
-	f.offset = uint64(absOffset)
-	return int64(f.offset), nil
+	f.offset = absOffset
+	return f.offset, nil
 }
 
 func (f *file) Close() error {
