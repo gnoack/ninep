@@ -21,18 +21,23 @@ type file struct {
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
+	n, err = f.ReadAt(p, int64(f.offset))
+	f.offset += uint64(n)
+	return n, err
+}
+
+func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
 	// Truncate read to iounit size if necessary.
 	if uint32(len(p)) > f.iounit {
 		p = p[:f.iounit]
 	}
-	count, err := f.cc.Read(context.TODO(), f.FID, f.offset, p)
+	count, err := f.cc.Read(context.TODO(), f.FID, uint64(off), p)
 	if err != nil {
 		return 0, err
 	}
 	if count == 0 && len(p) > 0 {
 		return 0, io.EOF
 	}
-	f.offset += uint64(count) // XXX: Check overflow?
 	return int(count), nil
 }
 
