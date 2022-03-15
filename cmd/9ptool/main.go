@@ -25,11 +25,7 @@ func parsePositionalArgs() (cmd string, service string, path string) {
 	}
 	cmd = flag.Args()[0]
 	arg := flag.Args()[1]
-	parts := strings.SplitN(arg, "/", 2)
-	service = parts[0]
-	if len(parts) == 2 {
-		path = parts[1]
-	}
+	service, path, _ = strings.Cut(arg, "/")
 	return
 }
 

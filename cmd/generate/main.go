@@ -57,8 +57,7 @@ func printComment(ss []string) {
 
 // returns type, variable name, size calculation code
 func getInfo(s string) (string, string, string) {
-	parts := strings.SplitN(s, "[", 2)
-	name := parts[0]
+	name, _, _ := strings.Cut(s, "[")
 	switch {
 	case strings.HasSuffix(s, "[1]"):
 		return "uint8", name, "1"
