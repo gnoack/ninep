@@ -3,6 +3,7 @@ on: [push, pull_request]
 jobs:
   go_tests:
     name: Go Tests
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
