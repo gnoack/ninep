@@ -47,6 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Dial(%q): %v", service, err)
 	}
+	defer fsys.Close()
 
 	switch cmd {
 	case "cat":

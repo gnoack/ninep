@@ -140,4 +140,15 @@ func (f *FS) Open(name string) (fs.File, error) {
 	return &file{FID: f.nextFID, cc: f.cc, iounit: iounit, QID: qid}, nil
 }
 
+// Close closes the underlying file system connection.
+// Closing the FS before discarding already opened files is an error.
+func (f *FS) Close() error {
+	if f.cc == nil {
+		return nil
+	}
+	err := f.cc.Close()
+	f.cc = nil
+	return err
+}
+
 var _ fs.FS = (*FS)(nil)

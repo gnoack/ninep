@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 )
+
+var errConnShutdown = errors.New("connection shutdown")
 
 type msgHeader struct {
 	size    uint32
@@ -32,7 +35,6 @@ func (h *msgHeader) readerFrom(r io.Reader) io.Reader {
 
 type callback func(d msgHeader)
 
-// TODO(gnoack): Need a way to close these.
 // clientConn represents a connection to a 9p server.
 type clientConn struct {
 	tags chan uint16
@@ -46,6 +48,10 @@ type clientConn struct {
 
 	// Connection preferences
 	msize uint32
+
+	// Shutdown helpers
+	cancel func(error)
+	wg     sync.WaitGroup
 }
 
 func readHeader(r io.Reader) (hdr msgHeader, err error) {
@@ -76,6 +82,9 @@ func (c *clientConn) run(ctx context.Context) error {
 		hdr, err := readHeader(c.conn)
 		// TODO: Use limit reader
 		if err != nil {
+			if context.Cause(ctx) == errConnShutdown {
+				return nil
+			}
 			return fmt.Errorf("peek error when expecting next message: %w", err)
 		}
 
@@ -114,6 +123,18 @@ func (c *clientConn) clearReqReader(tag uint16) {
 	defer c.rrmux.Unlock()
 
 	delete(c.reqReaders, tag)
+}
+
+// Close closes the 9p connection.
+func (c *clientConn) Close() error {
+	if c.cancel == nil {
+		return nil
+	}
+
+	defer c.wg.Wait()
+	c.cancel(errConnShutdown)
+	c.cancel = nil
+	return c.conn.Close()
 }
 
 type tagHandle struct {

@@ -108,19 +108,23 @@ func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
 	}
 
 	// Build client connection.
+	ctx, cancelCause := context.WithCancelCause(context.Background())
 	cc := &clientConn{
 		tags:       make(chan uint16, options.concurrency),
 		conn:       netConn,
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
+		cancel:     cancelCause,
 	}
 	// Fill tag queue.
 	for i := uint16(0); i < options.concurrency; i++ {
 		cc.tags <- i
 	}
 
+	cc.wg.Add(1)
 	go func() {
-		err := cc.run(context.Background()) // TODO: Cancelation
+		defer cc.wg.Done()
+		err := cc.run(ctx)
 		if err != nil {
 			// TODO: How to report error correctly?
 			log.Fatalf("9p client: run(): %v", err)
