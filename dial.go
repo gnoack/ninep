@@ -114,11 +114,10 @@ func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
 	}
-	go func() {
-		for i := uint16(0); i < options.concurrency; i++ {
-			cc.tags <- i
-		}
-	}()
+	// Fill tag queue.
+	for i := uint16(0); i < options.concurrency; i++ {
+		cc.tags <- i
+	}
 
 	go func() {
 		err := cc.run(context.Background()) // TODO: Cancelation
