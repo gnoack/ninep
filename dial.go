@@ -126,6 +126,9 @@ func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
 		defer cc.wg.Done()
 		err := cc.run(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return // OK
+			}
 			// TODO: How to report error correctly?
 			log.Fatalf("9p client: run(): %v", err)
 		}
