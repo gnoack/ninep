@@ -88,7 +88,7 @@ func Dial(service string, opts ...dialOpt) (dFS *FS, dErr error) {
 }
 
 // dial9pConn establishes a 9p client connection and returns it.
-func dial9pConn(service string, opts ...dialOpt) (dConn *clientConn, dErr error) {
+func dial9pConn(service string, opts ...dialOpt) (dConn *ClientConn, dErr error) {
 	options := dialOptions{
 		concurrency: 256,
 	}
@@ -116,7 +116,7 @@ func dial9pConn(service string, opts ...dialOpt) (dConn *clientConn, dErr error)
 
 	// Build client connection.
 	ctx, cancelCause := context.WithCancelCause(context.Background())
-	cc := &clientConn{
+	cc := &ClientConn{
 		tags:       make(chan uint16, options.concurrency),
 		conn:       netConn,
 		reqReaders: make(map[uint16]callback),

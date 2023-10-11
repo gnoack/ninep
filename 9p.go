@@ -35,8 +35,8 @@ func (h *msgHeader) readerFrom(r io.Reader) io.Reader {
 
 type callback func(d msgHeader)
 
-// clientConn represents a connection to a 9p server.
-type clientConn struct {
+// ClientConn represents a connection to a 9p server.
+type ClientConn struct {
 	tags chan uint16
 
 	wmux sync.Mutex // Write mutex.
@@ -71,7 +71,7 @@ func readHeader(r io.Reader) (hdr msgHeader, err error) {
 }
 
 // run runs the background reader goroutine which dispatches requests.
-func (c *clientConn) run(ctx context.Context) error {
+func (c *ClientConn) run(ctx context.Context) error {
 	// TODO: The context cancelation here is poor. We should be
 	// able to return immediately, not only after reading the next
 	// message header.
@@ -95,7 +95,7 @@ func (c *clientConn) run(ctx context.Context) error {
 	}
 }
 
-func (c *clientConn) getReqReader(tag uint16) callback {
+func (c *ClientConn) getReqReader(tag uint16) callback {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
@@ -114,14 +114,14 @@ func (c *clientConn) getReqReader(tag uint16) callback {
 	return rr
 }
 
-func (c *clientConn) setReqReader(tag uint16, rr callback) {
+func (c *ClientConn) setReqReader(tag uint16, rr callback) {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
 	c.reqReaders[tag] = rr
 }
 
-func (c *clientConn) clearReqReader(tag uint16) {
+func (c *ClientConn) clearReqReader(tag uint16) {
 	c.rrmux.Lock()
 	defer c.rrmux.Unlock()
 
@@ -129,7 +129,7 @@ func (c *clientConn) clearReqReader(tag uint16) {
 }
 
 // Close closes the 9p connection.
-func (c *clientConn) Close() error {
+func (c *ClientConn) Close() error {
 	if c.cancel == nil {
 		return nil
 	}
@@ -147,8 +147,8 @@ type tagHandle struct {
 	// The handling function replies back to the reader run loop
 	// through this channel.
 	doneReading chan struct{}
-	// Parent clientConn
-	conn *clientConn
+	// Parent ClientConn
+	conn *ClientConn
 }
 
 func (h *tagHandle) awaitHdr(ctx context.Context) (msgHeader, error) {
@@ -171,7 +171,7 @@ func (h *tagHandle) await(ctx context.Context) (io.Reader, error) {
 	return hdr.readerFrom(h.conn.conn), nil
 }
 
-func (c *clientConn) acquireTag() *tagHandle {
+func (c *ClientConn) acquireTag() *tagHandle {
 	h := &tagHandle{
 		conn:        c,
 		tag:         <-c.tags,
@@ -186,7 +186,7 @@ func (c *clientConn) acquireTag() *tagHandle {
 	return h
 }
 
-func (c *clientConn) releaseTag(h *tagHandle) {
+func (c *ClientConn) releaseTag(h *tagHandle) {
 	close(h.doneReading)
 	c.clearReqReader(h.tag)
 	c.tags <- h.tag
@@ -197,7 +197,7 @@ func (c *clientConn) releaseTag(h *tagHandle) {
 // offset indicates the offset into the file where to read.
 // buf is the buffer to read into and may not be larger than
 // the fid's iounit as returned by Open().
-func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []byte) (n uint32, err error) {
+func (c *ClientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []byte) (n uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -218,7 +218,7 @@ func (c *clientConn) Read(ctx context.Context, fid uint32, offset uint64, buf []
 	return readRread(r, buf)
 }
 
-func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data []byte) (n uint32, err error) {
+func (c *ClientConn) Write(ctx context.Context, fid uint32, offset uint64, data []byte) (n uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -239,7 +239,7 @@ func (c *clientConn) Write(ctx context.Context, fid uint32, offset uint64, data 
 	return readRwrite(r)
 }
 
-func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []string) (qids []QID, err error) {
+func (c *ClientConn) Walk(ctx context.Context, fid, newfid uint32, wname []string) (qids []QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -260,7 +260,7 @@ func (c *clientConn) Walk(ctx context.Context, fid, newfid uint32, wname []strin
 	return readRwalk(r)
 }
 
-func (c *clientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error) {
+func (c *ClientConn) Stat(ctx context.Context, fid uint32) (stat Stat, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -291,7 +291,7 @@ const (
 	ORClose = 0x40 // delete on clunk
 )
 
-func (c *clientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID, iounit uint32, err error) {
+func (c *ClientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID, iounit uint32, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -312,7 +312,7 @@ func (c *clientConn) Open(ctx context.Context, fid uint32, mode uint8) (qid QID,
 	return readRopen(r)
 }
 
-func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
+func (c *ClientConn) Clunk(ctx context.Context, fid uint32) (err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -334,7 +334,7 @@ func (c *clientConn) Clunk(ctx context.Context, fid uint32) (err error) {
 }
 
 // TODO: Do callers need to check the error?
-func (c *clientConn) Flush(oldtag uint16) (err error) {
+func (c *ClientConn) Flush(oldtag uint16) (err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 
@@ -352,7 +352,7 @@ func (c *clientConn) Flush(oldtag uint16) (err error) {
 	return readRflush(r)
 }
 
-func (c *clientConn) Attach(ctx context.Context, fid uint32, afid uint32, uname string, aname string) (qid QID, err error) {
+func (c *ClientConn) Attach(ctx context.Context, fid uint32, afid uint32, uname string, aname string) (qid QID, err error) {
 	tag := c.acquireTag()
 	defer c.releaseTag(tag)
 

@@ -14,7 +14,7 @@ import (
 
 type file struct {
 	FID    uint32
-	cc     *clientConn
+	cc     *ClientConn
 	offset int64
 	iounit uint32
 	QID    QID
@@ -108,7 +108,7 @@ func (fi *statFileInfo) Type() fs.FileMode          { return fi.Mode().Type() }
 func (fi *statFileInfo) Info() (fs.FileInfo, error) { return fi, nil }
 
 type FS struct {
-	cc      *clientConn
+	cc      *ClientConn
 	rootFID uint32
 }
 
