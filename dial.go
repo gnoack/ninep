@@ -29,12 +29,7 @@ func dialNet(service string) (net.Conn, error) {
 	return net.Dial("unix", filepath.Join("/tmp", sessionDir, service))
 }
 
-func handshake(c net.Conn) (msize uint32, err error) {
-	uname, aname := "user", ""
-	wantVersion := "9P2000"
-	var wantMsize uint32 = 8192
-	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
-
+func versionRPC(c net.Conn, wantVersion string, wantMsize uint32) (msize uint32, vErr error) {
 	if err := writeTversion(c, notag, wantMsize, wantVersion); err != nil {
 		return 0, err
 	}
@@ -46,15 +41,25 @@ func handshake(c net.Conn) (msize uint32, err error) {
 	if wantMsize < msize {
 		return 0, fmt.Errorf("server wanted too high msize of %v", msize)
 	}
+
 	if version != wantVersion {
 		return 0, fmt.Errorf("mismatching version: %q != %q", version, wantVersion)
+	}
+	return msize, nil
+}
+
+func handshake(c net.Conn) (msize uint32, err error) {
+	msize, err = versionRPC(c, "9P2000", 8192)
+	if err != nil {
+		return msize, err
 	}
 
 	// Afid is nofid when the client doesn't want to authenticate.
 	afid := nofid
 
 	// XXX: Authentication step
-
+	uname, aname := "user", ""
+	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
 	if err := writeTattach(c, 1, rootFID, afid, uname, aname); err != nil {
 		return 0, err
 	}
