@@ -2,7 +2,9 @@ package ninep
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -121,19 +123,49 @@ func Dial(service string, opts DialOpts) (dConn *ClientConn, dErr error) {
 	return cc, nil
 }
 
+type Authenticator func(io.ReadWriter) error
+
 type AttachOpts struct {
 	// Username to attach with
 	Uname string
 
 	// The remote file system to attach to
 	Aname string
+
+	// Authenticator
+	Authenticator Authenticator
 }
 
 // Attach opens a file system from an already-open client connection.
 func Attach(cc *ClientConn, opts AttachOpts) (fsys *FS, err error) {
-	// Attach.
-	afid := nofid
+	// Attempt auth
+	afid := cc.fidPool.Acquire()
 
+	qid, err := cc.Auth(context.Background(), afid, opts.Uname, opts.Aname)
+	switch {
+	case err != nil && strings.HasSuffix(err.Error(), "authentication not required"):
+		// Authentication not required.
+		cc.fidPool.Release(afid)
+		afid = nofid
+	case err != nil:
+		cc.fidPool.Release(afid)
+		return nil, err
+	case opts.Authenticator == nil:
+		cc.fidPool.Release(afid)
+		return nil, errors.New("no means to authenticate")
+	default:
+		// TODO: This should not duplicate the code from OpenFile().
+		iounit := cc.msize - 24
+		authfile := &file{FID: afid, cc: cc, iounit: iounit, QID: qid}
+		defer authfile.Close()
+
+		err := opts.Authenticator(authfile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Attach.
 	fid := cc.fidPool.Acquire()
 	defer func() {
 		if fsys != nil {

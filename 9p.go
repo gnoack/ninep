@@ -372,3 +372,24 @@ func (c *ClientConn) Attach(ctx context.Context, fid uint32, afid uint32, uname 
 
 	return readRattach(r)
 }
+
+func (c *ClientConn) Auth(ctx context.Context, afid uint32, uname, aname string) (qid QID, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTauth(c.conn, tag.tag, afid, uname, aname)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	r, err := tag.await(context.Background())
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
+
+	return readRauth(r)
+}
