@@ -52,6 +52,9 @@ type clientConn struct {
 	// Shutdown helpers
 	cancel func(error)
 	wg     sync.WaitGroup
+
+	// Thread-safe pool of FIDs to use
+	fidPool fidPool
 }
 
 func readHeader(r io.Reader) (hdr msgHeader, err error) {

@@ -91,6 +91,7 @@ func (f *file) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (f *file) Close() error {
+	defer f.cc.fidPool.Release(f.FID)
 	return f.cc.Clunk(context.TODO(), f.FID)
 }
 
@@ -108,26 +109,31 @@ func (fi *statFileInfo) Info() (fs.FileInfo, error) { return fi, nil }
 
 type FS struct {
 	cc      *clientConn
-	nextFID uint32
 	rootFID uint32
 }
 
 // Open opens a file for reading.
-func (f *FS) Open(name string) (fs.File, error) {
+func (f *FS) Open(name string) (filp fs.File, openErr error) {
 	// TODO: Verify name format.
 	components := strings.Split(name, "/")
 	if len(name) == 0 {
 		components = nil
 	}
 
-	// TODO: Track used FIDs instead of just cycling.
-	f.nextFID++
-	_, err := f.cc.Walk(context.TODO(), f.rootFID, f.nextFID, components)
+	fid := f.cc.fidPool.Acquire()
+	defer func() {
+		if filp == nil {
+			return
+		}
+		f.cc.fidPool.Release(fid)
+	}()
+
+	_, err := f.cc.Walk(context.TODO(), f.rootFID, fid, components)
 	if err != nil {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	qid, iounit, err := f.cc.Open(context.TODO(), f.nextFID, ORead)
+	qid, iounit, err := f.cc.Open(context.TODO(), fid, ORead)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
@@ -137,7 +143,7 @@ func (f *FS) Open(name string) (fs.File, error) {
 		iounit = f.cc.msize - 24
 	}
 
-	return &file{FID: f.nextFID, cc: f.cc, iounit: iounit, QID: qid}, nil
+	return &file{FID: fid, cc: f.cc, iounit: iounit, QID: qid}, nil
 }
 
 // Close closes the underlying file system connection.
