@@ -12,6 +12,11 @@ import (
 	"github.com/gnoack/ninep"
 )
 
+var (
+	uname = flag.String("uname", os.Getenv("USER"), "Username to try to attach with")
+	aname = flag.String("aname", "", "File system to attach to (may be empty)")
+)
+
 func usage() {
 	fmt.Fprintf(flag.CommandLine.Output(), "Usage\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "     %s CMD PATH\n", os.Args[0])
@@ -43,7 +48,12 @@ func main() {
 	flag.Parse()
 	cmd, service, path := parsePositionalArgs()
 
-	fsys, err := ninep.DialFS(service, ninep.DialFSOpts{})
+	fsys, err := ninep.DialFS(service, ninep.DialFSOpts{
+		AttachOpts: ninep.AttachOpts{
+			Uname: *uname,
+			Aname: *aname,
+		},
+	})
 	if err != nil {
 		log.Fatalf("DialFS(%q): %v", service, err)
 	}

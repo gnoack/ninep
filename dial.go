@@ -50,6 +50,7 @@ func versionRPC(c net.Conn, wantVersion string, wantMsize uint32) (msize uint32,
 
 type DialFSOpts struct {
 	DialOpts
+	AttachOpts
 }
 
 // DialFS dials a 9p client connection and directly attaches to it.
@@ -59,25 +60,7 @@ func DialFS(service string, opts DialFSOpts) (dFS *FS, dErr error) {
 		return nil, err
 	}
 
-	// Attach.
-	var (
-		afid  = nofid
-		uname = "user"
-		aname = ""
-	)
-	fid := cc.fidPool.Acquire()
-	defer func() {
-		if dFS != nil {
-			return
-		}
-		cc.fidPool.Release(fid)
-	}()
-	_, err = cc.Attach(context.Background(), fid, afid, uname, aname)
-	if err != nil {
-		return nil, err
-	}
-
-	return &FS{cc: cc, rootFID: fid}, nil
+	return Attach(cc, opts.AttachOpts)
 }
 
 type DialOpts struct {
@@ -136,4 +119,32 @@ func Dial(service string, opts DialOpts) (dConn *ClientConn, dErr error) {
 	}()
 
 	return cc, nil
+}
+
+type AttachOpts struct {
+	// Username to attach with
+	Uname string
+
+	// The remote file system to attach to
+	Aname string
+}
+
+// Attach opens a file system from an already-open client connection.
+func Attach(cc *ClientConn, opts AttachOpts) (fsys *FS, err error) {
+	// Attach.
+	afid := nofid
+
+	fid := cc.fidPool.Acquire()
+	defer func() {
+		if fsys != nil {
+			return
+		}
+		cc.fidPool.Release(fid)
+	}()
+	_, err = cc.Attach(context.Background(), fid, afid, opts.Uname, opts.Aname)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FS{cc: cc, rootFID: fid}, nil
 }
