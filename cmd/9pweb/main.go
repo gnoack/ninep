@@ -14,9 +14,9 @@ var (
 )
 
 func main() {
-	fsys, err := ninep.Dial(*service)
+	fsys, err := ninep.DialFS(*service)
 	if err != nil {
-		log.Fatalf("ninep.Dial(%q): %v", *service, err)
+		log.Fatalf("ninep.DialFS(%q): %v", *service, err)
 	}
 
 	http.Handle("/", http.FileServer(http.FS(fsys)))

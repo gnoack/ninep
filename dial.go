@@ -48,20 +48,9 @@ func versionRPC(c net.Conn, wantVersion string, wantMsize uint32) (msize uint32,
 	return msize, nil
 }
 
-type dialOptions struct {
-	concurrency uint16
-}
-
-type dialOpt func(*dialOptions)
-
-func WithConcurrency(concurrency uint16) dialOpt {
-	return func(c *dialOptions) {
-		c.concurrency = concurrency
-	}
-}
-
-func Dial(service string, opts ...dialOpt) (dFS *FS, dErr error) {
-	cc, err := dial9pConn(service, opts...)
+// DialFS dials a 9p client connection and directly attaches to it.
+func DialFS(service string, opts ...dialOpt) (dFS *FS, dErr error) {
+	cc, err := Dial(service, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +76,20 @@ func Dial(service string, opts ...dialOpt) (dFS *FS, dErr error) {
 	return &FS{cc: cc, rootFID: fid}, nil
 }
 
-// dial9pConn establishes a 9p client connection and returns it.
-func dial9pConn(service string, opts ...dialOpt) (dConn *ClientConn, dErr error) {
+type dialOptions struct {
+	concurrency uint16
+}
+
+type dialOpt func(*dialOptions)
+
+func WithConcurrency(concurrency uint16) dialOpt {
+	return func(c *dialOptions) {
+		c.concurrency = concurrency
+	}
+}
+
+// Dial establishes a 9p client connection and returns it.
+func Dial(service string, opts ...dialOpt) (dConn *ClientConn, dErr error) {
 	options := dialOptions{
 		concurrency: 256,
 	}
