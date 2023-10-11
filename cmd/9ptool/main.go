@@ -43,7 +43,7 @@ func main() {
 	flag.Parse()
 	cmd, service, path := parsePositionalArgs()
 
-	fsys, err := ninep.DialFS(service)
+	fsys, err := ninep.DialFS(service, ninep.DialFSOpts{})
 	if err != nil {
 		log.Fatalf("DialFS(%q): %v", service, err)
 	}

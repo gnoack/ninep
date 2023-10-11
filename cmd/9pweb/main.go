@@ -14,7 +14,7 @@ var (
 )
 
 func main() {
-	fsys, err := ninep.DialFS(*service)
+	fsys, err := ninep.DialFS(*service, ninep.DialFSOpts{})
 	if err != nil {
 		log.Fatalf("ninep.DialFS(%q): %v", *service, err)
 	}

@@ -48,9 +48,13 @@ func versionRPC(c net.Conn, wantVersion string, wantMsize uint32) (msize uint32,
 	return msize, nil
 }
 
+type DialFSOpts struct {
+	DialOpts
+}
+
 // DialFS dials a 9p client connection and directly attaches to it.
-func DialFS(service string, opts ...dialOpt) (dFS *FS, dErr error) {
-	cc, err := Dial(service, opts...)
+func DialFS(service string, opts DialFSOpts) (dFS *FS, dErr error) {
+	cc, err := Dial(service, opts.DialOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -76,28 +80,17 @@ func DialFS(service string, opts ...dialOpt) (dFS *FS, dErr error) {
 	return &FS{cc: cc, rootFID: fid}, nil
 }
 
-type dialOptions struct {
-	concurrency uint16
-}
-
-type dialOpt func(*dialOptions)
-
-func WithConcurrency(concurrency uint16) dialOpt {
-	return func(c *dialOptions) {
-		c.concurrency = concurrency
-	}
+type DialOpts struct {
+	Concurrency uint16
 }
 
 // Dial establishes a 9p client connection and returns it.
-func Dial(service string, opts ...dialOpt) (dConn *ClientConn, dErr error) {
-	options := dialOptions{
-		concurrency: 256,
-	}
-	for _, opt := range opts {
-		opt(&options)
+func Dial(service string, opts DialOpts) (dConn *ClientConn, dErr error) {
+	if opts.Concurrency == 0 {
+		opts.Concurrency = 256
 	}
 
-	// Dial
+	// Dial.
 	netConn, err := dialNet(service)
 	if err != nil {
 		return nil, err
@@ -118,14 +111,14 @@ func Dial(service string, opts ...dialOpt) (dConn *ClientConn, dErr error) {
 	// Build client connection.
 	ctx, cancelCause := context.WithCancelCause(context.Background())
 	cc := &ClientConn{
-		tags:       make(chan uint16, options.concurrency),
+		tags:       make(chan uint16, opts.Concurrency),
 		conn:       netConn,
 		reqReaders: make(map[uint16]callback),
 		msize:      msize,
 		cancel:     cancelCause,
 	}
 	// Fill tag queue.
-	for i := uint16(0); i < options.concurrency; i++ {
+	for i := uint16(0); i < opts.Concurrency; i++ {
 		cc.tags <- i
 	}
 
