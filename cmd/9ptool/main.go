@@ -72,6 +72,23 @@ func main() {
 		}
 		os.Stdout.Write(buf)
 
+	case "write":
+		f, err := fsys.OpenFile(path, ninep.OWrite)
+		if err != nil {
+			log.Fatalf("OpenFile: %v", err)
+		}
+		defer f.Close()
+
+		w, ok := f.(io.Writer)
+		if !ok {
+			log.Fatalf("OpenFile did not return writeable file: %v", f)
+		}
+		n, err := io.Copy(w, os.Stdin)
+		if err != nil {
+			log.Fatalf("io.Copy: %v", err)
+		}
+		fmt.Printf("%d bytes written.\n", n)
+
 	case "stat":
 		stat, err := fs.Stat(fsys, path)
 		if err != nil {

@@ -41,6 +41,21 @@ func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
 	return int(count), nil
 }
 
+func (f *file) Write(p []byte) (n int, err error) {
+	n, err = f.WriteAt(p, f.offset)
+	f.offset += int64(n)
+	return n, err
+}
+
+func (f *file) WriteAt(p []byte, off int64) (n int, err error) {
+	// Truncate write to iounit size if necessary.
+	if uint32(len(p)) > f.iounit {
+		p = p[:f.iounit]
+	}
+	count, err := f.cc.Write(context.TODO(), f.FID, uint64(off), p)
+	return int(count), err
+}
+
 func (f *file) Stat() (info os.FileInfo, err error) {
 	stat, err := f.cc.Stat(context.TODO(), f.FID)
 	return &statFileInfo{s: stat}, err
@@ -114,6 +129,13 @@ type FS struct {
 
 // Open opens a file for reading.
 func (f *FS) Open(name string) (filp fs.File, openErr error) {
+	return f.OpenFile(name, ORead)
+}
+
+// OpenFile is the generalized open call.
+//
+// Remark: This is not part of io/fs.FS.
+func (f *FS) OpenFile(name string, mode uint8) (filp fs.File, openErr error) {
 	// TODO: Verify name format.
 	components := strings.Split(name, "/")
 	if len(name) == 0 {
@@ -133,7 +155,7 @@ func (f *FS) Open(name string) (filp fs.File, openErr error) {
 		return nil, fmt.Errorf("9p walk: %w", err)
 	}
 
-	qid, iounit, err := f.cc.Open(context.TODO(), fid, ORead)
+	qid, iounit, err := f.cc.Open(context.TODO(), fid, mode)
 	if err != nil {
 		return nil, fmt.Errorf("9p open: %w", err)
 	}
