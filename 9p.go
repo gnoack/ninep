@@ -346,8 +346,29 @@ func (c *clientConn) Flush(oldtag uint16) (err error) {
 		return
 	}
 
-	// Note: Servers must repond to flush.
+	// Note: This may not error. Servers must repond to flush.
 	r, _ := tag.await(context.Background())
 
 	return readRflush(r)
+}
+
+func (c *clientConn) Attach(ctx context.Context, fid uint32, afid uint32, uname string, aname string) (qid QID, err error) {
+	tag := c.acquireTag()
+	defer c.releaseTag(tag)
+
+	c.wmux.Lock()
+	err = writeTattach(c.conn, tag.tag, fid, afid, uname, aname)
+	c.wmux.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	r, err := tag.await(context.Background())
+	if err != nil {
+		c.Flush(tag.tag)
+		return
+	}
+
+	return readRattach(r)
 }

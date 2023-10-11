@@ -48,28 +48,6 @@ func versionRPC(c net.Conn, wantVersion string, wantMsize uint32) (msize uint32,
 	return msize, nil
 }
 
-func handshake(c net.Conn) (msize uint32, err error) {
-	msize, err = versionRPC(c, "9P2000", 8192)
-	if err != nil {
-		return msize, err
-	}
-
-	// Afid is nofid when the client doesn't want to authenticate.
-	afid := nofid
-
-	// XXX: Authentication step
-	uname, aname := "user", ""
-	rootFID := uint32(0) // TODO: Dynamically acquire FIDs somehow
-	if err := writeTattach(c, 1, rootFID, afid, uname, aname); err != nil {
-		return 0, err
-	}
-	_, err = readRattach(c)
-	if err != nil {
-		return 0, fmt.Errorf("attach(): %w", err)
-	}
-	return msize, nil
-}
-
 type dialOptions struct {
 	concurrency uint16
 }
@@ -82,16 +60,35 @@ func WithConcurrency(concurrency uint16) dialOpt {
 	}
 }
 
-func Dial(service string, opts ...dialOpt) (*FS, error) {
+func Dial(service string, opts ...dialOpt) (dFS *FS, dErr error) {
 	cc, err := dial9pConn(service, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &FS{cc: cc}, nil
+
+	// Attach.
+	var (
+		afid  = nofid
+		uname = "user"
+		aname = ""
+	)
+	fid := cc.fidPool.Acquire()
+	defer func() {
+		if dFS != nil {
+			return
+		}
+		cc.fidPool.Release(fid)
+	}()
+	_, err = cc.Attach(context.Background(), fid, afid, uname, aname)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FS{cc: cc, rootFID: fid}, nil
 }
 
 // dial9pConn establishes a 9p client connection and returns it.
-func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
+func dial9pConn(service string, opts ...dialOpt) (dConn *clientConn, dErr error) {
 	options := dialOptions{
 		concurrency: 256,
 	}
@@ -104,11 +101,16 @@ func dial9pConn(service string, opts ...dialOpt) (*clientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Handshake
-	msize, err := handshake(netConn)
-	if err != nil {
+	defer func() {
+		if dConn != nil {
+			return
+		}
 		netConn.Close()
+	}()
+
+	// Check version and negotiate msize.
+	msize, err := versionRPC(netConn, "9P2000", 8192)
+	if err != nil {
 		return nil, err
 	}
 
