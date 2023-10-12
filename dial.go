@@ -143,13 +143,10 @@ func Attach(cc *ClientConn, opts AttachOpts) (fsys *FS, err error) {
 
 	qid, err := cc.Auth(context.Background(), afid, opts.Uname, opts.Aname)
 	switch {
-	case err != nil && strings.HasSuffix(err.Error(), "authentication not required"):
+	case err != nil:
 		// Authentication not required.
 		cc.fidPool.Release(afid)
 		afid = nofid
-	case err != nil:
-		cc.fidPool.Release(afid)
-		return nil, err
 	case opts.Authenticator == nil:
 		cc.fidPool.Release(afid)
 		return nil, errors.New("no means to authenticate")
