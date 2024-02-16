@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,11 +15,15 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
+	fmt.Println("Connecting to", *service)
 	fsys, err := ninep.DialFS(*service, ninep.DialFSOpts{})
 	if err != nil {
 		log.Fatalf("ninep.DialFS(%q): %v", *service, err)
 	}
 
+	fmt.Println("Serving on", *addr)
 	http.Handle("/", http.FileServer(http.FS(fsys)))
 	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
