@@ -24,7 +24,7 @@ func main() {
 	}
 
 	fmt.Println("Serving on", *addr)
-	http.Handle("/", http.FileServer(http.FS(fsys)))
+	http.Handle("GET /", http.FileServerFS(fsys))
 	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatalf("http.ListenAndServe(%q, nil): %v", *addr, err)
